@@ -39,7 +39,7 @@ public:
     bool insert_symbol(SymbolInfo* s_info);
     SymbolInfo* lookup(std::string symbol, int* pos);
     SymbolInfo* lookup(std::string symbol);
-    bool delete_symbol(std::string symbol);
+    bool delete_symbol(std::string symbol, int* pos);
     std::string printable_scope_string(std::string indent);
     std::string printable_scope_string(){ return printable_scope_string("\t"); }
 };
@@ -89,21 +89,24 @@ SymbolInfo* ScopeTable::lookup(std::string symbol){
     return this->lookup(symbol, nullptr);
 }
 
-bool ScopeTable::delete_symbol(std::string symbol){
+bool ScopeTable::delete_symbol(std::string symbol, int* pos=nullptr){
     int idx = this->hash_function(symbol, this->bucket_size);
     if(symbol_infos[idx]==nullptr) return false;
     SymbolInfo* temp = symbol_infos[idx];
     if(temp->get_symbol()==symbol){
         symbol_infos[idx] = temp->get_next_symbolinfo();
         delete temp;
+        if(pos != nullptr) pos[0]=idx+1; pos[1]=1;
         return true;
     }
-    SymbolInfo* desired;
+    SymbolInfo* desired; int pos_count=1;
     while(temp->get_next_symbolinfo()!=nullptr){
         desired = temp->get_next_symbolinfo();
+        pos_count++;
         if(desired->get_symbol() == symbol){
             temp->set_next_symbolinfo(desired->get_next_symbolinfo());
             delete desired;
+            if(pos != nullptr) pos[0]=idx+1; pos[1]=pos_count;
             return true;
         }
     }

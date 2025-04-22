@@ -17,9 +17,17 @@ public:
     SymbolTable(int bucket_size): SymbolTable(bucket_size, sdbm_hash) {}
     int enter_new_scope();
     int exit_scope();
+    /// @brief insert a symbol inside the current scope
+    /// @param s_info a pointer to the SymbolInfo object created using new operator
+    /// @param pos an integer array of size 3, (scope_table_no, scope_table_row, scope_table_column)
+    /// @return true if insertion was successfull, false otherwise
     bool insert_symbol(SymbolInfo* s_info, int * pos=nullptr);
+    /// @brief Inserts a symbol to current scope
+    /// @param parts array of strings, required to create a symbol info instance. follows format [name, type, return_type(if function), function_arguments | structure elements]
+    /// @param pos an integer array of size 3, (scope_table_no, scope_table_row, scope_table_column)
+    /// @return true if insertion was successfull, false otherwise
     bool insert_symbol(std::string* parts, int * pos=nullptr);
-    bool remove_symbol(std::string symbol);
+    bool remove_symbol(std::string symbol, int* pos=nullptr);
     SymbolInfo * lookup(std::string symbol, int* pos=nullptr);
     std::string current_scope_string();
     std::string all_scope_string();
@@ -42,6 +50,7 @@ int SymbolTable::enter_new_scope(){
 }
 
 int SymbolTable::exit_scope(){
+    if(this->current_scope == nullptr) return -1;
     ScopeTable* removable = this->current_scope;
     this->current_scope = this->current_scope->get_parent_scope();
     int scope_no = removable->get_scope_no();
@@ -50,20 +59,52 @@ int SymbolTable::exit_scope(){
 }
 
 bool SymbolTable::insert_symbol(SymbolInfo* s_info, int* pos=nullptr){
-    return this->current_scope->insert_symbol(s_info, pos);
+    if (pos==nullptr)
+        return this->current_scope->insert_symbol(s_info, nullptr);
+    pos[0] = this->current_scope->get_scope_no();
+    return this->current_scope->insert_symbol(s_info, pos+1);
 }
 
 bool SymbolTable::insert_symbol(std::string* parts, int * pos=nullptr){
     SymbolInfo * s_info;
     if(parts[1]=="FUNCTION")
         s_info = new FunctionSymbolInfo(parts[0], parts[1], parts[2], parts+3);
-    else if(parts[1]=="STRUCT")
+    else if(parts[1]=="STRUCT" || parts[1]=="UNION")
         s_info = new StructSymbolInfo(parts[0], parts[1], parts+2);
     else
         s_info = new SymbolInfo(parts[0], parts[1]);
-    return this->current_scope->insert_symbol(s_info, pos);
+    return this->insert_symbol(s_info, pos);
 }
 
+SymbolInfo* SymbolTable::lookup(std::string symbol, int* pos){
+    SymbolInfo* smbl;
+    int * k = nullptr;
+    if (pos != nullptr) k = pos+1;
+    for(ScopeTable* curr = this->current_scope; curr!=nullptr; curr=curr->get_parent_scope()){
+        smbl = curr->lookup(symbol, k);
+        if (smbl != nullptr){
+            if (pos != nullptr) pos[0] = curr->get_scope_no();
+            return smbl;
+        }
+    }
+    return nullptr;
+}
+
+bool SymbolTable::remove_symbol(std::string symbol, int* pos){
+    SymbolInfo* smbl;
+    bool success = false;
+    int * k = nullptr;
+    if (pos != nullptr) k = pos+1;
+    for(ScopeTable* curr = this->current_scope; curr!=nullptr; curr=curr->get_parent_scope()){
+        success = curr->delete_symbol(symbol, k);
+        if (success){
+            if (pos != nullptr) pos[0] = curr->get_scope_no();
+            return true;
+        }
+    }
+    return false;
+    
+}
 
 
 
