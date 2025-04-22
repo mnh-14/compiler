@@ -51,6 +51,7 @@ int SymbolTable::enter_new_scope(){
 
 int SymbolTable::exit_scope(){
     if(this->current_scope == nullptr) return -1;
+    if(this->current_scope->get_scope_no() == 1) return -1;
     ScopeTable* removable = this->current_scope;
     this->current_scope = this->current_scope->get_parent_scope();
     int scope_no = removable->get_scope_no();
@@ -106,6 +107,30 @@ bool SymbolTable::remove_symbol(std::string symbol, int* pos){
     
 }
 
+
+std::string SymbolTable::current_scope_string(){
+    return this->current_scope->printable_scope_string("\t");
+}
+
+std::string SymbolTable::all_scope_string(){
+    std::string represent = "";
+    ScopeTable* curr = nullptr;
+    int i=1;
+    for(curr = this->current_scope; curr != nullptr; curr = curr->get_parent_scope(), i++){
+        represent += curr->printable_scope_string(std::string(i, '\t'));        
+    }
+    return represent;
+}
+
+
+SymbolTable::~SymbolTable(){
+    ScopeTable* curr = this->current_scope, *temp;
+    while(curr != nullptr){
+        temp = curr;
+        curr = curr->get_parent_scope();
+        delete temp;
+    }
+}
 
 
 
