@@ -105,16 +105,19 @@ bool SymbolTable::remove_symbol(std::string symbol, int* pos){
     SymbolInfo* smbl;
     bool success = false;
     int * k = nullptr;
-    if (pos != nullptr) k = pos+1;
-    for(ScopeTable* curr = this->current_scope; curr!=nullptr; curr=curr->get_parent_scope()){
-        success = curr->delete_symbol(symbol, k);
-        if (success){
-            if (pos != nullptr) pos[0] = curr->get_scope_no();
-            return true;
-        }
+    if (this->current_scope == nullptr) return false;
+    if (pos != nullptr){
+        k = pos+1;
+        pos[0] = this->current_scope->get_scope_no();
     }
-    return false;
-    
+    return this->current_scope->delete_symbol(symbol, k);
+    // for(ScopeTable* curr = this->current_scope; curr!=nullptr; curr=curr->get_parent_scope()){
+    //     success = curr->delete_symbol(symbol, k);
+    //     if (success){
+    //         if (pos != nullptr) pos[0] = curr->get_scope_no();
+    //         return true;
+    //     }
+    // }
 }
 
 

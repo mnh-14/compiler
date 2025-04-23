@@ -97,7 +97,7 @@ void handle_incesrtion(SymbolTable& symbol_table, string* cmd_parts, int part_co
     if(success)
         cout << TAB << "Inserted in ScopeTable# " << location[0] << " at position " << location[1] << ", " << location[2] << endl;
     else
-        cout << TAB << "'" << cmd_parts[1] << "' alreay exists in the current ScopeTable" << endl;
+        cout << TAB << "'" << cmd_parts[1] << "' already exists in the current ScopeTable" << endl;
     
 }
 

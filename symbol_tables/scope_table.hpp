@@ -57,14 +57,17 @@ bool ScopeTable::insert_symbol(SymbolInfo* s_info, int * insertion_pos){
     }
     SymbolInfo * temp = this->symbol_infos[idx];
     int pos_count = 2;
-    if(temp->get_symbol() == s_info->get_symbol())
-        return false;
     while(temp->get_next_symbolinfo() != nullptr){
+        // LOG("TEMP INFO: "+temp->get_symbol()+"-"+temp->get_symbol_type());
+        // LOG("Inserting: "+s_info->get_symbol()+"-"+s_info->get_symbol_type());
+        // LOG(temp->get_symbol() == s_info->get_symbol());
         if(temp->get_symbol() == s_info->get_symbol())
             return false;
         temp = temp->get_next_symbolinfo();
         pos_count++;
     }
+    if(temp->get_symbol() == s_info->get_symbol())
+        return false;
     temp->set_next_symbolinfo(s_info);
     if(insertion_pos!=nullptr){ insertion_pos[0] = idx+1; insertion_pos[1] =  pos_count; }
     return true;

@@ -38,7 +38,7 @@ SymbolInfo::~SymbolInfo(){
 }
 
 std::string SymbolInfo::get_string_repr(std::string lbrace, std::string rbrace){
-    return lbrace + this->symbol + ", " + this->symbol_type + rbrace;
+    return lbrace + this->symbol + "," + this->symbol_type + rbrace;
 }
 
 std::string SymbolInfo::get_string_repr(){
