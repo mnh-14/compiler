@@ -22,11 +22,11 @@ void parameter_missmatch_print(string cmd, string indent=TAB);
 
 int main(){
     int bucket;
-    cout << "Enter Bucket size: ";
+    // cout << "Enter Bucket size: ";
     cin >> bucket;
     cin.ignore();
     SymbolTable symbol_table(bucket, sdbm_hash);
-    cout << "\tScopeTable #1 created" << endl;
+    cout << "\tScopeTable# 1 created" << endl;
     
     string cmd, *cmd_parts;
     int cmd_len, cmd_count=0;
@@ -145,12 +145,12 @@ void handle_exiting_scope(SymbolTable& symbol_table, string* cmd_parts, int part
 }
 
 void handle_printing(SymbolTable& symbol_table, string* cmd_parts, int part_count){
-    if(part_count != 1)
+    if(part_count != 2)
         return parameter_missmatch_print(cmd_parts[0]);
     if (cmd_parts[1]=="C")
         cout << symbol_table.current_scope_string() << endl;
     else if (cmd_parts[1]=="A")
-        cout << symbol_table.all_scope_string() << endl;
+        cout << symbol_table.all_scope_string();
     else 
         cout << TAB << "Parameter mismatch for the command " << cmd_parts[1] << endl;
     

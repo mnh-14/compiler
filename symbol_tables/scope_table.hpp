@@ -21,11 +21,12 @@ public:
         this->scope_no = scope_no;
         this->hash_function = func;
         this->symbol_infos = new SymbolInfo*[bucket_size]();
+
     }
     ScopeTable(int bucket_size, int scope_no){
         this->bucket_size = bucket_size;
         this->scope_no = scope_no;
-        this->symbol_infos = new SymbolInfo*[bucket_size];
+        this->symbol_infos = new SymbolInfo*[bucket_size]();
     }
     void set_hash_function(unsigned int (*func)(std::string, unsigned int)){
         this->hash_function = func;

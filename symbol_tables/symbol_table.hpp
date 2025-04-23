@@ -9,7 +9,7 @@
 class SymbolTable{
 private:
     ScopeTable * current_scope;
-    int bucket_size;
+    int bucket_size, scope_count;
     unsigned int(*hash_function)(std::string, unsigned int);
 
 public:
@@ -47,10 +47,12 @@ SymbolTable::SymbolTable(int bucket_size, unsigned int (*func)(std::string, unsi
     this->bucket_size = bucket_size;
     this->hash_function = func;
     this->current_scope = new ScopeTable(bucket_size, 1, func);
+    this->scope_count = 1;
 }
 
 int SymbolTable::enter_new_scope(){
-    ScopeTable * new_scope = new ScopeTable(this->bucket_size, this->current_scope->get_scope_no()+1);
+    this->scope_count++;
+    ScopeTable * new_scope = new ScopeTable(this->bucket_size, this->scope_count);
     new_scope->set_hash_function(this->hash_function);
     new_scope->set_parent_scope(this->current_scope);
     this->current_scope = new_scope;
@@ -126,6 +128,7 @@ std::string SymbolTable::all_scope_string(){
     int i=1;
     for(curr = this->current_scope; curr != nullptr; curr = curr->get_parent_scope(), i++){
         represent += curr->printable_scope_string(std::string(i, '\t'));        
+        represent += "\n";
     }
     return represent;
 }
