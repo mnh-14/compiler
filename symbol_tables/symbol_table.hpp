@@ -19,15 +19,23 @@ public:
     int exit_scope();
     /// @brief insert a symbol inside the current scope
     /// @param s_info a pointer to the SymbolInfo object created using new operator
-    /// @param pos an integer array of size 3, (scope_table_no, scope_table_row, scope_table_column)
+    /// @param pos an integer array of size 3, (scope_table_no, scope_table_row, scope_table_column) to point out the exact location of the symbol in SymbolTable
     /// @return true if insertion was successfull, false otherwise
     bool insert_symbol(SymbolInfo* s_info, int * pos=nullptr);
     /// @brief Inserts a symbol to current scope
     /// @param parts array of strings, required to create a symbol info instance. follows format [name, type, return_type(if function), function_arguments | structure elements]
-    /// @param pos an integer array of size 3, (scope_table_no, scope_table_row, scope_table_column)
+    /// @param pos an integer array of size 3, (scope_table_no, scope_table_row, scope_table_column) to point out the exact location of the symbol in SymbolTable
     /// @return true if insertion was successfull, false otherwise
     bool insert_symbol(std::string* parts, int * pos=nullptr);
+    /// @brief removes the desired symbol from the scope table
+    /// @param symbol the desired symbols symbol name
+    /// @param pos an integer array of size 3, (scope_table_no, scope_table_row, scope_table_column) to point out the exact location of the symbol in SymbolTable
+    /// @return true if removal was successful, false otherwise
     bool remove_symbol(std::string symbol, int* pos=nullptr);
+    /// @brief fidning a symbol from symbol table
+    /// @param symbol the required symbol's name
+    /// @param pos an integer array of size 3, (scope_table_no, scope_table_row, scope_table_column) to point out the exact location of the symbol in SymbolTable
+    /// @return the desired symbol info instance | nullptr
     SymbolInfo * lookup(std::string symbol, int* pos=nullptr);
     std::string current_scope_string();
     std::string all_scope_string();
@@ -59,14 +67,14 @@ int SymbolTable::exit_scope(){
     return scope_no;
 }
 
-bool SymbolTable::insert_symbol(SymbolInfo* s_info, int* pos=nullptr){
+bool SymbolTable::insert_symbol(SymbolInfo* s_info, int* pos){
     if (pos==nullptr)
         return this->current_scope->insert_symbol(s_info, nullptr);
     pos[0] = this->current_scope->get_scope_no();
     return this->current_scope->insert_symbol(s_info, pos+1);
 }
 
-bool SymbolTable::insert_symbol(std::string* parts, int * pos=nullptr){
+bool SymbolTable::insert_symbol(std::string* parts, int * pos){
     SymbolInfo * s_info;
     if(parts[1]=="FUNCTION")
         s_info = new FunctionSymbolInfo(parts[0], parts[1], parts[2], parts+3);

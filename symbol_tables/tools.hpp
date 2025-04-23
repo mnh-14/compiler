@@ -5,6 +5,7 @@
 #include <string>
 
 #define LOG(msg) log(msg, __func__, __FILE__, __LINE__)
+#define _LOG_DESTRUC true
 
 void log(std::string mssg){
     std::cout << mssg << std::endl;

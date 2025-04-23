@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include "symbol_info.hpp"
+#include "./tools.hpp"
 
 
 class ScopeTable{
@@ -143,6 +144,8 @@ ScopeTable::~ScopeTable(){
         }
     }
     delete[] symbol_infos;
+    if(_LOG_DESTRUC)
+        std::cout << "\tScopeTable# " << this->scope_no << " removed" << std::endl;
 }
 
 

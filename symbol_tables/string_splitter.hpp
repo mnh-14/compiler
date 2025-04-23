@@ -4,6 +4,7 @@
 
 #include <string>
 #include <cstring>
+#include "./tools.hpp"
 
 // int split_string(std::string str, std::string*& copy_to, int& size){
 //     int strlen = str.length();
@@ -41,37 +42,6 @@
 int split_string(std::string str, std::string*& copy_to){
     int strlen = str.length();
     std::string* words = new std::string[strlen];
-    int word_count = 0, prev_word_idx = 0, word_size;
-
-    for (int i=0; i<strlen; i++){
-        if(str.at(i) == ' '){
-            word_size = i - prev_word_idx;
-            words[word_count] = str.substr(prev_word_idx, word_size);
-            word_count++;
-            prev_word_idx = i+1;
-        }
-        // if(str.at(i)=='\n' || str.at(i)=='/0')
-        //     break;
-    }
-    words[word_count] = str.substr(prev_word_idx, strlen-prev_word_idx);
-    word_count++;
-    
-    // free copy_to, if needed
-    copy_to = new std::string[word_count+1];
-    for(int i=0; i<word_count; i++){
-        copy_to[i] = words[i];
-    }
-    copy_to[word_count] = "\n";
-    return word_count;
-}
-
-
-int split_string(std::string str, std::string*& copy_to, bool space_optimize){
-    if(space_optimize==false){
-        return split_string(str, copy_to);
-    }
-    int strlen = str.length();
-    std::string* words = new std::string[strlen];
     int word_count = 0, word_start = -1, word_size;
 
     for (int i=0; i<strlen; i++){
@@ -102,6 +72,38 @@ int split_string(std::string str, std::string*& copy_to, bool space_optimize){
     copy_to[word_count] = "\n";
     return word_count;
 }
+
+int split_string(std::string str, std::string*& copy_to, bool space_optimized){
+    if (space_optimized==true){
+        return split_string(str, copy_to);
+    }
+    int strlen = str.length();
+    std::string* words = new std::string[strlen];
+    int word_count = 0, prev_word_idx = 0, word_size;
+
+    for (int i=0; i<strlen; i++){
+        if(str.at(i) == ' '){
+            word_size = i - prev_word_idx;
+            words[word_count] = str.substr(prev_word_idx, word_size);
+            word_count++;
+            prev_word_idx = i+1;
+        }
+        // if(str.at(i)=='\n' || str.at(i)=='/0')
+        //     break;
+    }
+    words[word_count] = str.substr(prev_word_idx, strlen-prev_word_idx);
+    word_count++;
+    
+    // free copy_to, if needed
+    copy_to = new std::string[word_count+1];
+    for(int i=0; i<word_count; i++){
+        copy_to[i] = words[i];
+    }
+    copy_to[word_count] = "\n";
+    return word_count;
+}
+
+
 
 
 
