@@ -143,3 +143,15 @@ void handle_exiting_scope(SymbolTable& symbol_table, string* cmd_parts, int part
     
         symbol_table.exit_scope();
 }
+
+void handle_printing(SymbolTable& symbol_table, string* cmd_parts, int part_count){
+    if(part_count != 1)
+        return parameter_missmatch_print(cmd_parts[0]);
+    if (cmd_parts[1]=="C")
+        cout << symbol_table.current_scope_string() << endl;
+    else if (cmd_parts[1]=="A")
+        cout << symbol_table.all_scope_string() << endl;
+    else 
+        cout << TAB << "Parameter mismatch for the command " << cmd_parts[1] << endl;
+    
+}
