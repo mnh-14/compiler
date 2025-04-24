@@ -23,6 +23,10 @@ void parameter_missmatch_print(string cmd, string indent=TAB);
 int main(){
     int bucket;
     // cout << "Enter Bucket size: ";
+    if(FILE_STREAM){
+        freopen("bin/linput.txt", "r", stdin);
+        freopen("bin/output.txt", "w", stdout);
+    }
     cin >> bucket;
     cin.ignore();
     SymbolTable symbol_table(bucket, sdbm_hash);
@@ -33,8 +37,10 @@ int main(){
     bool running = true;
     while(running){
         getline(cin, cmd);
+        cerr << cmd << endl;
         cmd_len = split_string(cmd, cmd_parts);
         cmd_count++;
+        cerr << cmd_len << " " << cmd_count << endl;
         if(cmd_len < 0) continue;
         
         show_command(cmd_parts, cmd_count);
