@@ -64,8 +64,7 @@ int main(){
         default:
             break;
         }
-
-        
+        delete[] cmd_parts;
     }
 
     
@@ -98,6 +97,7 @@ void handle_incesrtion(SymbolTable& symbol_table, string* cmd_parts, int part_co
         cout << TAB << "Inserted in ScopeTable# " << location[0] << " at position " << location[1] << ", " << location[2] << endl;
     else
         cout << TAB << "'" << cmd_parts[1] << "' already exists in the current ScopeTable" << endl;
+    delete[] location;
     
 }
 
@@ -110,11 +110,10 @@ void handle_lookup(SymbolTable& symbol_table, string* cmd_parts, int part_count)
         cout << TAB << "'" << cmd_parts[1] << "' found in ScopeTable# " << location[0] << " at position " << location[1] << ", " << location[2] << endl;
     else 
         cout << TAB << "'" << cmd_parts[1] << "' not found in any of the ScopeTables" << endl;
+    delete[] location;
 }
 
 void handle_deletion(SymbolTable& symbol_table, string* cmd_parts, int part_count){
-    // Deleted '==' from ScopeTable# 5 at position 2, 1
-    // Not found in the current ScopeTable
     if (part_count != 2)
         return parameter_missmatch_print(cmd_parts[0]);
     
@@ -124,6 +123,7 @@ void handle_deletion(SymbolTable& symbol_table, string* cmd_parts, int part_coun
         cout << TAB << "Deleted '" << cmd_parts[1] << "' from ScopeTable# " << loc[0] << " at position " << loc[1] << ", " << loc[2] << endl;
     else
         cout << TAB << "Not found in the current ScopeTable" << endl;
+    delete[] loc;
 }
 
 

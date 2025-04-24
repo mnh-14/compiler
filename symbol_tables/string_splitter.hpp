@@ -70,6 +70,7 @@ int split_string(std::string str, std::string*& copy_to){
         copy_to[i] = words[i];        
     }
     copy_to[word_count] = "\n";
+    delete[] words;
     return word_count;
 }
 

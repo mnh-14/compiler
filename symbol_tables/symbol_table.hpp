@@ -84,7 +84,10 @@ bool SymbolTable::insert_symbol(std::string* parts, int * pos){
         s_info = new StructSymbolInfo(parts[0], parts[1], parts+2);
     else
         s_info = new SymbolInfo(parts[0], parts[1]);
-    return this->insert_symbol(s_info, pos);
+    bool success = this->insert_symbol(s_info, pos);
+    if(!success)
+        delete s_info;
+    return success;
 }
 
 SymbolInfo* SymbolTable::lookup(std::string symbol, int* pos){
