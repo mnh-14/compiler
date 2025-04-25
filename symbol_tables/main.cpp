@@ -20,16 +20,26 @@ void handle_exiting_scope(SymbolTable& symbol_table, string* cmd_parts, int part
 void parameter_missmatch_print(string cmd, string indent=TAB);
 
 
-int main(){
-    int bucket;
-    // cout << "Enter Bucket size: ";
-    if(FILE_STREAM){
-        freopen("bin/linput.txt", "r", stdin);
-        freopen("bin/output.txt", "w", stdout);
+int main(int argc, char* argv[]){
+    const char* input = "bin/linput.txt";
+    const char* output = "bin/output.txt";
+    unsigned int (*hash_func)(string, unsigned int) = sdbm_hash;
+    // cerr << "argc: " << argc << endl;
+    if(argc>=2) input = argv[1];
+    if(argc>=3) output = argv[2];
+    if(argc==4){
+        if(string(argv[3])=="djb2") hash_func = djb2_hash;
+        else if(string(argv[3])=="fnv1a") hash_func = fnv1a_hash; 
     }
+    if(FILE_STREAM){
+        freopen(input, "r", stdin);
+        freopen(output, "w", stdout);
+    }
+
+    int bucket;
     cin >> bucket;
     cin.ignore();
-    SymbolTable symbol_table(bucket, sdbm_hash);
+    SymbolTable symbol_table(bucket, hash_func);
     cout << "\tScopeTable# 1 created" << endl;
     
     string cmd, *cmd_parts;
@@ -40,7 +50,7 @@ int main(){
         cerr << cmd << endl;
         cmd_len = split_string(cmd, cmd_parts);
         cmd_count++;
-        cerr << cmd_len << " " << cmd_count << endl;
+        // cerr << cmd_len << " " << cmd_count << endl;
         if(cmd_len < 0) continue;
         
         show_command(cmd_parts, cmd_count);
@@ -85,6 +95,7 @@ void show_command(string* cmd_parts, int cmd_no){
     cout << endl;
 }
 
+
 void parameter_missmatch_print(string cmd, string indent){
     cout << indent << "Number of parameters mismatch for the command " << cmd << endl;
 }
@@ -104,8 +115,8 @@ void handle_incesrtion(SymbolTable& symbol_table, string* cmd_parts, int part_co
     else
         cout << TAB << "'" << cmd_parts[1] << "' already exists in the current ScopeTable" << endl;
     delete[] location;
-    
 }
+
 
 void handle_lookup(SymbolTable& symbol_table, string* cmd_parts, int part_count){
     if(part_count != 2)
@@ -118,6 +129,7 @@ void handle_lookup(SymbolTable& symbol_table, string* cmd_parts, int part_count)
         cout << TAB << "'" << cmd_parts[1] << "' not found in any of the ScopeTables" << endl;
     delete[] location;
 }
+
 
 void handle_deletion(SymbolTable& symbol_table, string* cmd_parts, int part_count){
     if (part_count != 2)
@@ -149,6 +161,7 @@ void handle_exiting_scope(SymbolTable& symbol_table, string* cmd_parts, int part
     
         symbol_table.exit_scope();
 }
+
 
 void handle_printing(SymbolTable& symbol_table, string* cmd_parts, int part_count){
     if(part_count != 2)

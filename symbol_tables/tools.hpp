@@ -14,7 +14,7 @@ void log(std::string mssg){
 
 template <typename TYPE>
 void log(TYPE mssg, const char* func, const char* file, int line){
-    std::cout << "[LOG]: " << mssg << "\tat " << file<< ": " << line << " in func: " << func << "()" << std::endl;
+    std::cerr << "[LOG]: " << mssg << "\tat " << file<< ": " << line << " in func: " << func << "()" << std::endl;
 }
 
 
