@@ -125,6 +125,7 @@ bool ScopeTable::delete_symbol(std::string symbol, int* pos=nullptr){
     SymbolInfo* desired; int pos_count=1;
     while(temp->get_next_symbolinfo()!=nullptr){
         desired = temp->get_next_symbolinfo();
+        // LOG(desired->get_symbol());
         pos_count++;
         if(desired->get_symbol() == symbol){
             temp->set_next_symbolinfo(desired->get_next_symbolinfo());
@@ -132,6 +133,7 @@ bool ScopeTable::delete_symbol(std::string symbol, int* pos=nullptr){
             if(pos != nullptr) pos[0]=idx+1; pos[1]=pos_count;
             return true;
         }
+        temp = temp->get_next_symbolinfo();
     }
     return false;
 }
