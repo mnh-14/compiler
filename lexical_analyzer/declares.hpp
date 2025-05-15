@@ -2,13 +2,17 @@
 #define DECLARES_HPP
 
 #include <string>
+#include <fstream>
+#include "../symbol_tables/symbol_table.hpp"
 
 class declared{
 public:
     static std::string comment;
     static std::string string_lex;
-    
-
+    static std::ifstream input_file;
+    static std::ofstream log_file;
+    static std::ofstream token_file;
+    static SymbolTable symbol_table;
 
 };
 
@@ -50,12 +54,21 @@ public:
     inline static const std::string RTHIRD = "RTHIRD";
     inline static const std::string COMMA = "COMMA";
     inline static const std::string SEMICOLON = "SEMICOLON";
+    
+    inline static const std::string COMMENT = "<COMMENT>";
+    inline static const std::string ID = "ID";
+    
 
     
-    static std::string construct_token(std::string name, std::string attribute){
-        return "<"+name+", "+attribute+">";
+    static std::string construct(std::string token_type, std::string attribute){
+        return "<"+token_type+", "+attribute+">";
     }
     
+    static std::string log_string(std::string token_type, std::string attribute){
+        return "Token <" + token_type + "> Lexeme " + attribute;
+    }
+    
+
 };
 
 
