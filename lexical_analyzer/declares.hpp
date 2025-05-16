@@ -13,7 +13,7 @@ public:
     inline static std::ofstream log_file;
     inline static std::ofstream token_file;
     static SymbolTable symbol_table;
-    inline static int line_count=0;
+    inline static int line_count=1;
 
 };
 

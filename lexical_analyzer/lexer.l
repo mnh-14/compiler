@@ -15,6 +15,8 @@
 
 VARIABLE [a-zA-Z_]+[a-zA-Z_0-9]*
 %x COMMENT
+%x STRING
+SINGLE_COMMENT //.*(\n|(\\\n.*)+)
 
 %%
 
@@ -42,44 +44,30 @@ VARIABLE [a-zA-Z_]+[a-zA-Z_0-9]*
 "long"      { handle_no_attribute_token(tokens::LONG, yytext); }
 "unsigned"  { handle_no_attribute_token(tokens::UNSIGNED, yytext); }
 
-"++"        { handle_attributed_token(tokens::INCOP, yytext); }
-"--"        { handle_attributed_token(tokens::INCOP, yytext); }
+("++"|"--") { handle_attributed_token(tokens::INCOP, yytext); }
 
-"+"         { handle_attributed_token(tokens::ADDOP, yytext); }
-"-"         { handle_attributed_token(tokens::ADDOP, yytext); }
+[+-]        { handle_attributed_token(tokens::ADDOP, yytext); }
+[*/%]       { handle_attributed_token(tokens::MULOP, yytext); }
 
-"*"         { handle_attributed_token(tokens::MULOP, yytext); }
-"/"         { handle_attributed_token(tokens::MULOP, yytext); }
-"%"         { handle_attributed_token(tokens::MULOP, yytext); }
-
-"<="        { handle_attributed_token(tokens::RELOP, yytext); }
-">="        { handle_attributed_token(tokens::RELOP, yytext); }
-"<"         { handle_attributed_token(tokens::RELOP, yytext); }
-">"         { handle_attributed_token(tokens::RELOP, yytext); }
-"=="        { handle_attributed_token(tokens::RELOP, yytext); }
-"!="        { handle_attributed_token(tokens::RELOP, yytext); }
-
+("<="|">=") { handle_attributed_token(tokens::RELOP, yytext); }
+("=="|"!=") { handle_attributed_token(tokens::RELOP, yytext); }
+[<>]        { handle_attributed_token(tokens::RELOP, yytext); }
 "="         { handle_attributed_token(tokens::ASSIGNOP, yytext); }
 
-"&&"        { handle_attributed_token(tokens::LOGICOP, yytext); }
-"||"        { handle_attributed_token(tokens::LOGICOP, yytext); }
-
+("&&"|"||") { handle_attributed_token(tokens::LOGICOP, yytext); }
 "!"         { handle_attributed_token(tokens::NOT, yytext); }
 
-"("         { handle_attributed_token(tokens::LPAREN, yytext); }
-")"         { handle_attributed_token(tokens::RPAREN, yytext); }
-
-"{"         { handle_attributed_token(tokens::LCURL, yytext); }
-"}"         { handle_attributed_token(tokens::RCURL, yytext); }
-
+[()]        { handle_attributed_token(tokens::LPAREN, yytext); }
+[{}]        { handle_attributed_token(tokens::LCURL, yytext); }
 "["         { handle_attributed_token(tokens::LTHIRD, yytext); }
 "]"         { handle_attributed_token(tokens::RTHIRD, yytext); }
 
 ","         { handle_attributed_token(tokens::COMMA, yytext); }
-
 ";"         { handle_attributed_token(tokens::SEMICOLON, yytext); }
 
 {VARIABLE}  { handle_attributed_token(tokens::ID, yytext, true); }
+
+\n          { declared::line_count++; }
 
 
 . {/* ignore */}
