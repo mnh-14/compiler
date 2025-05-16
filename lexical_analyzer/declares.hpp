@@ -16,6 +16,7 @@ public:
     inline static int line_count=1;
     inline static int comment_height=0;
     inline static int string_height=0;
+    inline static int error_count=0;
 
 };
 

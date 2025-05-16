@@ -14,11 +14,16 @@
 %}
 
 VARIABLE [a-zA-Z_]+[a-zA-Z_0-9]*
+MAL_VAR [0-9]+[a-zA-Z_][a-zA-Z_0-9]*
 NUM [0-9]
-FLOAT {NUM}*\.?{NUM}+(E{NUM}+)?
+FLOAT {NUM}*\.?{NUM}*(E[+-]?{NUM}+)?
+ILL_FLOAT {NUM}*\.?{NUM}+(E[+-]?({NUM}|\.)+)?
+MUL_FLOAT {NUM}*\.(\.|{NUM})+(E[+-]?{NUM}+)?
 
 S_CHAR \\[tnrb\\'afv0]
-S_NCHAR \\[^tnrb\\'afv0]
+NS_CHAR \\[^tnrb\\'afv0]
+UNF_CHAR \'(.|{S_CHAR})?[^\'\n]
+UNF_CHAR_N \'(.|{S_CHAR})?\n
 
 %x COMMENT
 %x STRING
@@ -30,6 +35,7 @@ S_NCHAR \\[^tnrb\\'afv0]
 
 "/*"                { BEGIN(COMMENT); declared::comment="/*"; declared::comment_height=0; }
 <COMMENT>"*/"       { BEGIN(INITIAL); handle_comment_token(declared::comment+"*/"); }
+<COMMENT><<EOF>>    { BEGIN(INITIAL); unfinished_comment(declared::comment); }
 <COMMENT>[^*\n]+    { declared::comment += yytext; }
 <COMMENT>\n         { declared::line_count++; declared::comment_height++; declared::comment+="\n"; }
 <COMMENT>"*"        { declared::comment += yytext; }
@@ -38,10 +44,12 @@ S_NCHAR \\[^tnrb\\'afv0]
 <SCOMMENT>\n        { BEGIN(INITIAL); handle_comment_token(declared::comment); declared::line_count++; }
 <SCOMMENT>[^\\\n]+  { declared::comment += yytext; }
 
-"\""                { BEGIN(STRING); declared::string_lexeme=""; declared::string_height=0;}
-<STRING>"\""        { BEGIN(INITIAL); handle_string_token(declared::string_lexeme); }
-<STRING>\\.         { handle_string_escape_characters(yytext[1]); }
+"\""                { BEGIN(STRING); declared::string_lexeme="\""; declared::string_height=0;}
+<STRING>"\""        { BEGIN(INITIAL); handle_string_token(declared::string_lexeme+"\""); }
 <STRING>\\\n        { declared::string_lexeme += yytext; declared::line_count++; declared::string_height++; }
+<STRING>\\.         { handle_string_escape_characters(yytext[1])? : BEGIN(INITIAL); }
+<STRING><<EOF>>     { BEGIN(INITIAL); unfinished_string(declared::string_lexeme); }
+<STRING>\n          { BEGIN(INITIAL); unfinished_string(declared::string_lexeme); declared::line_count++; }
 <STRING>[^\\\"\n]+  { declared::string_lexeme += yytext;}
 
 
@@ -64,6 +72,8 @@ S_NCHAR \\[^tnrb\\'afv0]
 "goto"      { handle_no_attribute_token(tokens::GOTO, yytext); }
 "long"      { handle_no_attribute_token(tokens::LONG, yytext); }
 "unsigned"  { handle_no_attribute_token(tokens::UNSIGNED, yytext); }
+"static"    { handle_no_attribute_token(tokens::STATIC, yytext); }
+"short"     { handle_no_attribute_token(tokens::SHORT, yytext); }
 
 ("++"|"--") { handle_attributed_token(tokens::INCOP, yytext); }
 
@@ -87,15 +97,23 @@ S_NCHAR \\[^tnrb\\'afv0]
 ";"         { handle_attributed_token(tokens::SEMICOLON, yytext); }
 
 {VARIABLE}  { handle_attributed_token(tokens::ID, yytext, true); }
+{MAL_VAR}   { invalied_identifier(yytext); }
 
+{UNF_CHAR_N}    { unfinished_character(yytext); declared::line_count++; }
 \'\'\'          { cout << "Got Error: " << yytext[1] << endl;}
-\'.\'           { handle_constants(tokens::CONST_CHAR, string(1, yytext[1])); }
-\'{S_CHAR}\'    { handle_const_escape_character(yytext[2]); }
-\'\'            { cout << "Got Error: " << yytext[1] << endl;}
+\'.\'           { handle_constants(tokens::CONST_CHAR, string(1, yytext[1]), true); }
+\'{S_CHAR}\'    { handle_const_escape_character(yytext[2], true); }
+{UNF_CHAR}      { unfinished_character(yytext); }
+\'..+\'         { multi_character(yytext); }
+\'\'            { empty_character(); }
 
 
-{NUM}+      { handle_constants(tokens::CONST_INT, yytext); }
-{FLOAT}     { handle_constants(tokens::CONST_FLOAT, yytext); }
+{NUM}+      { handle_constants(tokens::CONST_INT, yytext, true); }
+{FLOAT}     { handle_constants(tokens::CONST_FLOAT, yytext, true); }
+{MUL_FLOAT} { too_many_decimal_point(yytext); }
+{ILL_FLOAT} { ill_formed_number(yytext); }
+
+(#|@|$)     { unrecognized_character(yytext[0]); }
 
 
 \n          { declared::line_count++; }
