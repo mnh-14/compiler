@@ -5,7 +5,7 @@
 #include <string>
 
 #define LOG(msg) log(msg, __func__, __FILE__, __LINE__)
-#define _LOG_DESTRUC true
+#define _LOG_DESTRUC false
 #define FILE_STREAM true
 
 void log(std::string mssg){

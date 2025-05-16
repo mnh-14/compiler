@@ -7,12 +7,13 @@
 
 class declared{
 public:
-    static std::string comment;
-    static std::string string_lex;
-    static std::ifstream input_file;
-    static std::ofstream log_file;
-    static std::ofstream token_file;
+    inline static std::string comment;
+    inline static std::string string_lexeme;
+    inline static std::ifstream input_file;
+    inline static std::ofstream log_file;
+    inline static std::ofstream token_file;
     static SymbolTable symbol_table;
+    inline static int line_count=0;
 
 };
 
