@@ -14,18 +14,39 @@
 %}
 
 VARIABLE [a-zA-Z_]+[a-zA-Z_0-9]*
+NUM [0-9]
+FLOAT {NUM}*\.?{NUM}+(E{NUM}+)?
+
+S_CHAR \\[tnrb\\'afv0]
+S_NCHAR \\[^tnrb\\'afv0]
+
 %x COMMENT
 %x STRING
-SINGLE_COMMENT //.*(\n|(\\\n.*)+)
+%x SCOMMENT
+
+
 
 %%
 
-"/*" { BEGIN(COMMENT); declared::comment=""; }
-<COMMENT>"*/" { BEGIN(INITIAL); cout << "Found comment: " << declared::comment << endl; }
-<COMMENT>[^*]+ { declared::comment += yytext; }
-<COMMENT>"*" { declared::comment += yytext; }
+"/*"                { BEGIN(COMMENT); declared::comment="/*"; declared::comment_height=0; }
+<COMMENT>"*/"       { BEGIN(INITIAL); handle_comment_token(declared::comment+"*/"); }
+<COMMENT>[^*\n]+    { declared::comment += yytext; }
+<COMMENT>\n         { declared::line_count++; declared::comment_height++; declared::comment+="\n"; }
+<COMMENT>"*"        { declared::comment += yytext; }
+"//"                { BEGIN(SCOMMENT); declared::comment="//"; }
+<SCOMMENT>\\\n      { declared::comment += yytext; declared::line_count++; declared::comment_height++; }
+<SCOMMENT>\n        { BEGIN(INITIAL); handle_comment_token(declared::comment); declared::line_count++; }
+<SCOMMENT>[^\\\n]+  { declared::comment += yytext; }
+
+"\""                { BEGIN(STRING); declared::string_lexeme=""; declared::string_height=0;}
+<STRING>"\""        { BEGIN(INITIAL); handle_string_token(declared::string_lexeme); }
+<STRING>\\.         { handle_string_escape_characters(yytext[1]); }
+<STRING>\\\n        { declared::string_lexeme += yytext; declared::line_count++; declared::string_height++; }
+<STRING>[^\\\"\n]+  { declared::string_lexeme += yytext;}
+
 
 "if"        { handle_no_attribute_token(tokens::IF, yytext); }
+"for"       { handle_no_attribute_token(tokens::FOR, yytext); }
 "else"      { handle_no_attribute_token(tokens::ELSE, yytext); }
 "do"        { handle_no_attribute_token(tokens::DO, yytext); }
 "int"       { handle_no_attribute_token(tokens::INT, yytext); }
@@ -67,9 +88,17 @@ SINGLE_COMMENT //.*(\n|(\\\n.*)+)
 
 {VARIABLE}  { handle_attributed_token(tokens::ID, yytext, true); }
 
+\'\'\'          { cout << "Got Error: " << yytext[1] << endl;}
+\'.\'           { handle_constants(tokens::CONST_CHAR, string(1, yytext[1])); }
+\'{S_CHAR}\'    { handle_const_escape_character(yytext[2]); }
+\'\'            { cout << "Got Error: " << yytext[1] << endl;}
+
+
+{NUM}+      { handle_constants(tokens::CONST_INT, yytext); }
+{FLOAT}     { handle_constants(tokens::CONST_FLOAT, yytext); }
+
+
 \n          { declared::line_count++; }
-
-
 . {/* ignore */}
 
 

@@ -14,12 +14,15 @@ public:
     inline static std::ofstream token_file;
     static SymbolTable symbol_table;
     inline static int line_count=1;
+    inline static int comment_height=0;
+    inline static int string_height=0;
 
 };
 
 class tokens{
 public:
     inline static const std::string IF = "<IF>";
+    inline static const std::string FOR = "<FOR>";
     inline static const std::string ELSE = "<ELSE>";
     inline static const std::string DO = "<DO>";
     inline static const std::string INT = "<INT>";
@@ -58,6 +61,10 @@ public:
     
     inline static const std::string COMMENT = "<COMMENT>";
     inline static const std::string ID = "ID";
+    inline static const std::string STRING = "STRING";
+    inline static const std::string CONST_CHAR = "CONST_CHAR";
+    inline static const std::string CONST_INT = "CONST_INT";
+    inline static const std::string CONST_FLOAT = "CONST_FLOAT";
     
 
     
