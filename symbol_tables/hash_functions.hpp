@@ -11,6 +11,17 @@ unsigned int sdbm_hash(std::string str, unsigned int num_buckets){
     unsigned int len = str.length();
 
     for(unsigned int i=0; i<len; i++){
+        hash = (str[i]) + (hash << 6) + (hash << 16) - hash;
+    }
+    
+    return hash % num_buckets;
+}
+
+unsigned int sdbm_hash2(std::string str, unsigned int num_buckets){
+    unsigned int hash = 0;
+    unsigned int len = str.length();
+
+    for(unsigned int i=0; i<len; i++){
         hash = ((str[i]) + (hash << 6) + (hash << 16) - hash) % num_buckets;
     }
     

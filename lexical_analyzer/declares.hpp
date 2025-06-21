@@ -9,6 +9,7 @@ class declared{
 public:
     inline static std::string comment;
     inline static std::string string_lexeme;
+    inline static std::string string_log;
     inline static std::ifstream input_file;
     inline static std::ofstream log_file;
     inline static std::ofstream token_file;

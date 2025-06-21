@@ -36,7 +36,7 @@ public:
     /// @param symbol the required symbol's name
     /// @param pos an integer array of size 3, (scope_table_no, scope_table_row, scope_table_column) to point out the exact location of the symbol in SymbolTable
     /// @return the desired symbol info instance | nullptr
-    SymbolInfo * lookup(std::string symbol, int* pos=nullptr);
+    SymbolInfo * lookup(std::string symbol, int* pos=nullptr, std::string * scope_label=nullptr);
     std::string current_scope_string();
     std::string all_scope_string();
     ~SymbolTable();
@@ -90,7 +90,7 @@ bool SymbolTable::insert_symbol(std::string* parts, int * pos){
     return success;
 }
 
-SymbolInfo* SymbolTable::lookup(std::string symbol, int* pos){
+SymbolInfo* SymbolTable::lookup(std::string symbol, int* pos, std::string * scope_label){
     SymbolInfo* smbl;
     int * k = nullptr;
     if (pos != nullptr) k = pos+1;
@@ -98,6 +98,7 @@ SymbolInfo* SymbolTable::lookup(std::string symbol, int* pos){
         smbl = curr->lookup(symbol, k);
         if (smbl != nullptr){
             if (pos != nullptr) pos[0] = curr->get_scope_no();
+            if (scope_label!=nullptr) *scope_label = curr->get_label();
             return smbl;
         }
     }
@@ -125,7 +126,7 @@ bool SymbolTable::remove_symbol(std::string symbol, int* pos){
 
 
 std::string SymbolTable::current_scope_string(){
-    return this->current_scope->printable_scope_string("\t");
+    return this->current_scope->printable_scope_string("");
 }
 
 std::string SymbolTable::all_scope_string(){
@@ -133,7 +134,7 @@ std::string SymbolTable::all_scope_string(){
     ScopeTable* curr = nullptr;
     int i=1;
     for(curr = this->current_scope; curr != nullptr; curr = curr->get_parent_scope(), i++){
-        represent += curr->printable_scope_string(std::string(i, '\t'));        
+        represent += curr->printable_scope_string("");        
         represent += "\n";
     }
     return represent;

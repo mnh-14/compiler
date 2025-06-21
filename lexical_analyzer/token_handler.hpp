@@ -45,11 +45,11 @@ void unfinished_string(std::string sequence){
 }
 
 void unfinished_comment(std::string sequence){
-    error_report_to_log("Unterminaterd comment "+sequence, declared::line_count-declared::comment_height);
+    error_report_to_log("Unterminated comment "+sequence, declared::line_count-declared::comment_height);
 }
 
-void unrecognized_character(char c){
-    error_report_to_log("Unrecognized character"+c, declared::line_count);
+void unrecognized_character(std::string c){
+    error_report_to_log("Unrecognized character "+c, declared::line_count);
 }
 // Error Handlers end
 
@@ -61,24 +61,35 @@ void unrecognized_character(char c){
 
 void insert_to_symbol_table(std::string token_type, std::string lexeme){
     std::string info[2] = {lexeme, token_type};
-    declared::symbol_table.insert_symbol(info);
-    declared::log_file << "A symbol has been inserted" << std::endl << std::endl;
+    bool inserted = declared::symbol_table.insert_symbol(info);
+    if(inserted){
+        declared::log_file << declared::symbol_table.all_scope_string() << std::endl;
+    } else {
+        std::string label;
+        int pos[3];
+        SymbolInfo * si = declared::symbol_table.lookup(lexeme, pos, &label);
+        declared::log_file << si->get_string_repr() << " already exists in ScopeTable# " << label
+                            << " at position " << pos[1]-1 << ", " << pos[2]-1 << std::endl << std::endl;
+    }
+    // declared::log_file << "A symbol has been inserted" << std::endl << std::endl;
 }
 
-void report_to_log(std::string token, std::string lexeme, int line_no){
-    declared::log_file << "Line no " << line_no << ": Token " << token << " Lexeme " << lexeme << " found" << std::endl << std::endl;
+void report_to_log(std::string token, std::string lexeme, int line_no, std::string extension=""){
+    if(extension!="")
+        declared::log_file << "Line no " << declared::line_count << ": Token " << token << " Lexeme " << lexeme << " found --> "
+                            << extension << std::endl << std::endl;
+    else
+        declared::log_file << "Line no " << declared::line_count << ": Token " << token << " Lexeme " << lexeme << " found" << std::endl << std::endl;
 }
 
 void handle_no_attribute_token(std::string token, std::string lexeme){
     declared::token_file << token << ' ';
-    // declared::log_file << "Line no " << declared::line_count << ": Token " << token << " Lexeme " << lexeme << " found" << std::endl << std::endl;
     report_to_log(token, lexeme, declared::line_count);
 }
 
 std::string handle_attributed_token(std::string token_type, std::string lexeme, bool insert_symbol=false, std::string inserting_lexeme=""){
     std::string token = tokens::construct(token_type, lexeme);
     declared::token_file << token << " ";
-    // declared::log_file << "Line no " << declared::line_count << ": " << tokens::log_string(token_type, lexeme) << " found" << std::endl << std::endl;
     report_to_log("<"+token_type+">", lexeme, declared::line_count);
     
     if(insert_symbol)
@@ -94,8 +105,9 @@ void handle_comment_token(std::string comment){
 
 
 void handle_string_token(std::string lexeme){
-    declared::token_file << tokens::construct(tokens::STRING, lexeme) << " ";
-    report_to_log("<"+tokens::STRING+">", lexeme, declared::line_count-declared::string_height);
+    std::string token = tokens::construct(tokens::STRING, lexeme);
+    declared::token_file << token << " ";
+    report_to_log("<"+tokens::STRING+">", declared::string_log, declared::line_count-declared::string_height, token);
 }
 
 
@@ -126,6 +138,7 @@ bool handle_string_escape_characters(char c){
         return false;
     }
     declared::string_lexeme += special;
+    declared::string_log += special=="\""? "\\\"": special;
     return true;
 }
 

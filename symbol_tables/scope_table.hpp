@@ -11,6 +11,8 @@
 class ScopeTable{
 private:
     int bucket_size, scope_no;
+    std::string label="1";
+    int sub_scope_count=0;
     unsigned int(*hash_function)(std::string, unsigned int);
     SymbolInfo ** symbol_infos = nullptr;
     ScopeTable * parent_scope = nullptr;
@@ -21,7 +23,6 @@ public:
         this->scope_no = scope_no;
         this->hash_function = func;
         this->symbol_infos = new SymbolInfo*[bucket_size]();
-
     }
     ScopeTable(int bucket_size, int scope_no){
         this->bucket_size = bucket_size;
@@ -33,6 +34,8 @@ public:
     }
     void set_parent_scope(ScopeTable* parent){
         this->parent_scope = parent;
+        this->parent_scope->sub_scope_count++;
+        this->label = this->parent_scope->label + "." + std::to_string(this->parent_scope->sub_scope_count);
     }
     ScopeTable* get_parent_scope(){ return this->parent_scope; }
     int get_scope_no(){ return this->scope_no; }
@@ -60,6 +63,7 @@ public:
     /// @param pos an int array of 2 size: [hash table index, chained list index] indicating the position of the symbolInfo
     /// @return True if deletion was successful, False otherwise
     bool delete_symbol(std::string symbol, int* pos);
+    std::string get_label(){ return this->label; }
     std::string printable_scope_string(std::string indent);
     std::string printable_scope_string(){ return printable_scope_string("\t"); }
 };
@@ -140,15 +144,16 @@ bool ScopeTable::delete_symbol(std::string symbol, int* pos=nullptr){
 
 std::string ScopeTable::printable_scope_string(std::string indent){
     std::string represent = "";
-    represent = represent + indent + "ScopeTable# " + std::to_string(this->scope_no);
+    represent = represent + indent + "ScopeTable # " + this->label;
     SymbolInfo* curr;
     
     for(int i=0; i<bucket_size; i++){
-        represent = represent + "\n" + indent + std::to_string(i+1) + "--> ";
         curr = this->symbol_infos[i];
+        if(curr==nullptr) continue;
+        represent = represent + "\n" + indent + std::to_string(i) + " --> ";
         // LOG(i);
         while(curr != nullptr){
-            represent = represent + curr->get_string_repr() + " ";
+            represent = represent + curr->get_string_repr();
             curr = curr->get_next_symbolinfo();
         }
         // represent += "\n";

@@ -2,3 +2,5 @@ testing/
 bin/
 data/
 lexer.cc
+log_result.txt
+tokens.txt

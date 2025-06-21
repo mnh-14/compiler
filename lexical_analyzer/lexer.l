@@ -21,7 +21,6 @@ ILL_FLOAT {NUM}*\.?{NUM}+(E[+-]?({NUM}|\.)+)?
 MUL_FLOAT {NUM}*\.(\.|{NUM})+(E[+-]?{NUM}+)?
 
 S_CHAR \\[tnrb\\'afv0]
-NS_CHAR \\[^tnrb\\'afv0]
 UNF_CHAR \'(.|{S_CHAR})?[^\'\n]
 UNF_CHAR_N \'(.|{S_CHAR})?\n
 
@@ -36,21 +35,21 @@ UNF_CHAR_N \'(.|{S_CHAR})?\n
 "/*"                { BEGIN(COMMENT); declared::comment="/*"; declared::comment_height=0; }
 <COMMENT>"*/"       { BEGIN(INITIAL); handle_comment_token(declared::comment+"*/"); }
 <COMMENT><<EOF>>    { BEGIN(INITIAL); unfinished_comment(declared::comment); }
-<COMMENT>[^*\n]+    { declared::comment += yytext; }
 <COMMENT>\n         { declared::line_count++; declared::comment_height++; declared::comment+="\n"; }
+<COMMENT>[^*\n]+    { declared::comment += yytext; }
 <COMMENT>"*"        { declared::comment += yytext; }
-"//"                { BEGIN(SCOMMENT); declared::comment="//"; }
+"//"                { BEGIN(SCOMMENT); declared::comment="//"; declared::comment_height=0; }
 <SCOMMENT>\\\n      { declared::comment += yytext; declared::line_count++; declared::comment_height++; }
 <SCOMMENT>\n        { BEGIN(INITIAL); handle_comment_token(declared::comment); declared::line_count++; }
 <SCOMMENT>[^\\\n]+  { declared::comment += yytext; }
 
-"\""                { BEGIN(STRING); declared::string_lexeme="\""; declared::string_height=0;}
-<STRING>"\""        { BEGIN(INITIAL); handle_string_token(declared::string_lexeme+"\""); }
-<STRING>\\\n        { declared::string_lexeme += yytext; declared::line_count++; declared::string_height++; }
+"\""                { BEGIN(STRING); declared::string_log="\""; declared::string_lexeme=""; declared::string_height=0;}
+<STRING>"\""        { BEGIN(INITIAL); declared::string_log+="\""; handle_string_token(declared::string_lexeme); }
+<STRING>\\\n        { declared::string_log += yytext; declared::line_count++; declared::string_height++; }
 <STRING>\\.         { handle_string_escape_characters(yytext[1])? : BEGIN(INITIAL); }
-<STRING><<EOF>>     { BEGIN(INITIAL); unfinished_string(declared::string_lexeme); }
-<STRING>\n          { BEGIN(INITIAL); unfinished_string(declared::string_lexeme); declared::line_count++; }
-<STRING>[^\\\"\n]+  { declared::string_lexeme += yytext;}
+<STRING><<EOF>>     { BEGIN(INITIAL); unfinished_string(declared::string_log); }
+<STRING>\n          { BEGIN(INITIAL); unfinished_string(declared::string_log); declared::line_count++; }
+<STRING>[^\\\"\n]+  { declared::string_lexeme += yytext; declared::string_log += yytext; }
 
 
 "if"        { handle_no_attribute_token(tokens::IF, yytext); }
@@ -88,8 +87,10 @@ UNF_CHAR_N \'(.|{S_CHAR})?\n
 ("&&"|"||") { handle_attributed_token(tokens::LOGICOP, yytext); }
 "!"         { handle_attributed_token(tokens::NOT, yytext); }
 
-[()]        { handle_attributed_token(tokens::LPAREN, yytext); }
-[{}]        { handle_attributed_token(tokens::LCURL, yytext); }
+"("         { handle_attributed_token(tokens::LPAREN, yytext); }
+")"         { handle_attributed_token(tokens::RPAREN, yytext); }
+"{"         { handle_attributed_token(tokens::LCURL, yytext); declared::symbol_table.enter_new_scope(); }
+"}"         { handle_attributed_token(tokens::RCURL, yytext); declared::symbol_table.exit_scope(); }
 "["         { handle_attributed_token(tokens::LTHIRD, yytext); }
 "]"         { handle_attributed_token(tokens::RTHIRD, yytext); }
 
@@ -99,13 +100,13 @@ UNF_CHAR_N \'(.|{S_CHAR})?\n
 {VARIABLE}  { handle_attributed_token(tokens::ID, yytext, true); }
 {MAL_VAR}   { invalied_identifier(yytext); }
 
-{UNF_CHAR_N}    { unfinished_character(yytext); declared::line_count++; }
+\'\'            { empty_character(); }
 \'\'\'          { cout << "Got Error: " << yytext[1] << endl;}
 \'.\'           { handle_constants(tokens::CONST_CHAR, string(1, yytext[1]), true); }
 \'{S_CHAR}\'    { handle_const_escape_character(yytext[2], true); }
 {UNF_CHAR}      { unfinished_character(yytext); }
+{UNF_CHAR_N}    { unfinished_character(yytext); declared::line_count++; }
 \'..+\'         { multi_character(yytext); }
-\'\'            { empty_character(); }
 
 
 {NUM}+      { handle_constants(tokens::CONST_INT, yytext, true); }
@@ -113,7 +114,7 @@ UNF_CHAR_N \'(.|{S_CHAR})?\n
 {MUL_FLOAT} { too_many_decimal_point(yytext); }
 {ILL_FLOAT} { ill_formed_number(yytext); }
 
-(#|@|$)     { unrecognized_character(yytext[0]); }
+[#@$]     { unrecognized_character(yytext); }
 
 
 \n          { declared::line_count++; }
@@ -153,6 +154,11 @@ int main(int argc, char *argv[]){
         if(lexer.yylex() == 0)
             break;        
     }
+    
+    declared::log_file << declared::symbol_table.all_scope_string() << std::endl;
+    declared::log_file << "Total lines: " << declared::line_count << endl;
+    declared::log_file << "Total errors: " << declared::error_count << endl;
+    
     
     return 0;
 
