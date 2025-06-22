@@ -10,6 +10,8 @@ options {
     #include <string>
     #include <cstdlib>
     #include "C8086Lexer.h"
+	#include "symbol_tables/symbol_table.hpp"
+	#include "symbol_tables/symbol_info.hpp"
 
     extern std::ofstream parserLogFile;
     extern std::ofstream errorFile;
@@ -36,6 +38,10 @@ options {
         errorFile << message << std::endl;
         errorFile.flush();
     }
+
+	void write_rule(int line_no, std::string rule, std::string matched){
+		writeIntoparserLogFile("Line "+std::to_string(line_no)+": " + rule + "\n" + matched + "\n");
+	}
 }
 
 
@@ -82,7 +88,7 @@ var_declaration
             " at line " + std::to_string($sm->getLine())
         );
 
-        writeIntoparserLogFile("type_specifier name_line: " + $t.name_line);
+        writeIntoparserLogFile("type_specifier name_line: " + $t.type);
       }
 
     | t=type_specifier de=declaration_list_err sm=SEMICOLON {
@@ -101,22 +107,32 @@ declaration_list_err returns [std::string error_name]: {
     };
 
  		 
-type_specifier returns [std::string name_line]	
-        : INT {
-            $name_line = "type: INT at line" + std::to_string($INT->getLine());
-        }
- 		| FLOAT {
-            $name_line = "type: FLOAT at line" + std::to_string($FLOAT->getLine());
-        }
- 		| VOID {
-            $name_line = "type: VOID at line" + std::to_string($VOID->getLine());
-        }
+type_specifier returns [std::string type]	
+        : INT { write_rule($INT->getLine(), "type_specifier : INT", $INT->getText()); $type = "INT"; }
+ 		| FLOAT { write_rule($FLOAT->getLine(), "type_specifier : FLOAT", $FLOAT->getText()); $type = "FLOAT"; }
+ 		| VOID { write_rule($VOID->getLine(), "type_specifier : VOID", $VOID->getText()); $type = "VOID"; }
+ 		| CHAR { write_rule($CHAR->getLine(), "type_specifier : CHAR", $CHAR->getText()); $type = "CHAR"; }
  		;
- 		
-declaration_list : declaration_list COMMA ID
- 		  | declaration_list COMMA ID LTHIRD CONST_INT RTHIRD
- 		  | ID
- 		  | ID LTHIRD CONST_INT RTHIRD
+
+
+declaration_list returns [std::vector<std::string> vars]
+		  : dl=declaration_list COMMA ID {
+					$dl.vars.push_back($ID->getText()); $vars=$dl.vars;
+					write_rule($COMMA->getLine(), "declaration_list : declaration_list COMMA ID", $dl.getText()+","+$ID->getText());
+				}
+ 		  | declaration_list COMMA ID LTHIRD CONST_INT RTHIRD {
+					$dl.vars.push_back($ID->getText()); $vars=$dl.vars;
+					write_rule($COMMA->getLine(), "declaration_list : declaration_list COMMA ID LTHIRD CONST_INT RTHIRD", 
+								$dl.getText()+","+$ID->getText());
+				}
+ 		  | ID {
+					$vars.push_back($ID->getText());
+					write_rule($COMMA->getLine(), "declaration_list : ID", $dl.getText()+","+$ID->getText());
+				}
+ 		  | ID LTHIRD CONST_INT RTHIRD {
+					$vars.push_back($ID->getText());
+					write_rule($COMMA->getLine(), "declaration_list : ID LTHIRD CONST_INT RTHIRD", $dl.getText()+","+$ID->getText());
+				}
  		  ;
  		  
 statements : statement
@@ -127,8 +143,8 @@ statement : var_declaration
 	  | expression_statement
 	  | compound_statement
 	  | FOR LPAREN expression_statement expression_statement expression RPAREN statement
-	  | IF LPAREN expression RPAREN statement
 	  | IF LPAREN expression RPAREN statement ELSE statement
+	  | IF LPAREN expression RPAREN statement
 	  | WHILE LPAREN expression RPAREN statement
 	  | PRINTLN LPAREN ID RPAREN SEMICOLON
 	  | RETURN expression SEMICOLON

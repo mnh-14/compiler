@@ -89,6 +89,7 @@ RETURN   : 'return' { writeIntoLexLogFile("Line# " + std::to_string(getLine()) +
 INT      : 'int' { writeIntoLexLogFile("Line# " + std::to_string(getLine()) + ": Token <INT> Lexeme " + getText()); };
 FLOAT    : 'float' { writeIntoLexLogFile("Line# " + std::to_string(getLine()) + ": Token <FLOAT> Lexeme " + getText()); };
 VOID     : 'void' { writeIntoLexLogFile("Line# " + std::to_string(getLine()) + ": Token <VOID> Lexeme " + getText()); };
+CHAR     : 'char' { writeIntoLexLogFile("Line# " + std::to_string(getLine()) + ": Token <CHAR> Lexeme " + getText()); };
 
 LPAREN   : '(' { writeIntoLexLogFile("Line# " + std::to_string(getLine()) + ": Token <LPAREN> Lexeme " + getText()); };
 RPAREN   : ')' { writeIntoLexLogFile("Line# " + std::to_string(getLine()) + ": Token <RPAREN> Lexeme " + getText()); };
