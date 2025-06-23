@@ -29,26 +29,18 @@ public:
     /// @param s_info the SymbolInfo object pointer the be inserted
     /// @param insertion_pos an int array of 2 size: [hash table index, chained list index] indicating the position of the symbolInfo
     /// @return True or False depending on whether the insersion was successfull or not
-    bool insert_symbol(SymbolInfo* s_info, int * insertion_pos);
-    /// @brief Inserts the symbol into the scope table
-    /// @param s_info the SymbolInfo object pointer the be inserted
-    /// @return True or False depending on whether the insersion was successfull or not
-    bool insert_symbol(SymbolInfo* s_info);
+    bool insert_symbol(SymbolInfo* s_info, int * insertion_pos=nullptr);
     /// @brief Find the symbol Info with desired symbol name
     /// @param symbol the symbol name used to search
     /// @param pos an int array of 2 size: [hash table index, chained list index] indicating the position of the symbolInfo
     /// @return a pointer to the desired SymbolInfo instance or nullptr
-    SymbolInfo* lookup(std::string symbol, int* pos);
-    /// @brief Find the symbol Info with desired symbol name
-    /// @param symbol the symbol name used to search
-    /// @return a pointer to the desired SymbolInfo instance or nullptr
-    SymbolInfo* lookup(std::string symbol);
+    SymbolInfo* lookup(std::string symbol, int* pos=nullptr);
     /// @brief delete a certain symbol
     /// @param symbol the desired symbol name to be deleted
     /// @param pos an int array of 2 size: [hash table index, chained list index] indicating the position of the symbolInfo
     /// @return True if deletion was successful, False otherwise
-    bool delete_symbol(std::string symbol, int* pos);
-    std::string get_label(){ return this->label; }
+    bool delete_symbol(std::string symbol, int* pos=nullptr);
+    std::string get_label();
     std::string printable_scope_string(std::string indent);
     std::string printable_scope_string();
 };

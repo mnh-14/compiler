@@ -8,10 +8,6 @@
 #define _LOG_DESTRUC false
 #define FILE_STREAM true
 
-void log(std::string mssg){
-    std::cout << mssg << std::endl;
-}
-
 template <typename TYPE>
 void log(TYPE mssg, const char* func, const char* file, int line){
     std::cerr << "[LOG]: " << mssg << "\tat " << file<< ": " << line << " in func: " << func << "()" << std::endl;

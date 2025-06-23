@@ -9,12 +9,19 @@ options {
     #include <fstream>
     #include <string>
     #include <cstdlib>
+	#include <vector>
+	#include <utility>
     #include "C8086Lexer.h"
-	// #include "../symbol_tables/symbol_table.hpp"
-	// #include "../symbol_tables/symbol_info.hpp"
+	#include "../symbol_tables/symbol_table.hpp"
+	
+	
     extern std::ofstream parserLogFile;
     extern std::ofstream errorFile;
     extern int syntaxErrorCount;
+	extern SymbolTable symbol_table;
+	extern bool is_new_scoped;
+	extern std::vector<std::pair<std::string, std::string>> param_list;
+	extern std::vector<std::string> declared_ids;
 }
 
 @parser::members {
@@ -40,6 +47,49 @@ options {
 	void write_rule(int line_no, std::string rule, std::string matched){
 		writeIntoparserLogFile("Line "+std::to_string(line_no)+": " + rule + "\n\n" + matched + "\n");
 	}
+	void enter_scope(){
+		if(is_new_scoped)
+			is_new_scoped=false;
+		else
+			symbol_table.enter_new_scope();
+	}
+	void exit_scope(){
+		writeIntoparserLogFile("\n"+symbol_table.current_scope_string()+"\n");
+		symbol_table.exit_scope();
+	}
+	void fn_scope(){
+		symbol_table.enter_new_scope();
+		is_new_scoped=true;
+	}
+	
+	void declare_variables(bool dl, int line){
+		std::cout << "Declaring variables" << std::endl;
+		if (dl) {
+			for(auto s:declared_ids){
+				std::cout << "ID: "<< s << " Declared" << std::endl;
+			declared_ids.clear();
+			}
+		} else {
+			for(auto s:param_list){
+				std::cout << "pl:ID: "<< s.first << " " << s.second << " Declared" << std::endl;
+			}
+			param_list.clear();
+		}
+	}
+	void declare_function(std::string name, std::string ret, int line, bool def=false){
+		if (def){
+			std::cout << "A function is bing defined " << name << " " << ret << std::endl;
+			declare_variables(false, line);
+		} else {
+			std::cout << "A function is bing declared " << name << " " << ret << std::endl;
+			for(auto s:param_list){
+				std::cout << "pl:ID: "<< s.second << " Declared" << std::endl;
+			}
+			param_list.clear();
+		}
+	}
+	void add_to_dl(std::string id){ declared_ids.push_back(id); }
+	void add_to_pl(std::string id, std::string type){ param_list.push_back({type, id}); }
 }
 
 
@@ -62,10 +112,12 @@ unit returns [std::string read]
 
 func_declaration returns [std::string read]
 		: ts=type_specifier ID LPAREN pl=parameter_list RPAREN SEMICOLON {
+				declare_function($ID->getText(), $ts.read, $SEMICOLON->getLine());
 				$read = $ts.read + " " + $ID->getText() + "(" + $pl.read + ");";
 				write_rule($ctx->start->getLine(), "func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON ", $read);
 			}
 		| ts=type_specifier ID LPAREN RPAREN SEMICOLON { 
+				declare_function($ID->getText(), $ts.read, $SEMICOLON->getLine());
 				$read = $ts.read + " " + $ID->getText() + "();";
 				write_rule($ctx->start->getLine(), "func_declaration : type_specifier ID LPAREN RPAREN SEMICOLON ", $read);
 			}
@@ -73,11 +125,12 @@ func_declaration returns [std::string read]
 		 
 
 func_definition returns [std::string read]
-		: ts=type_specifier ID LPAREN pl=parameter_list RPAREN cs=compound_statement {
+		: ts=type_specifier ID LPAREN { fn_scope(); } pl=parameter_list r=RPAREN {declare_function($ID->getText(), $ts.read, $r->getLine(), true);} cs=compound_statement {
 				$read = $ts.read + " " + $ID->getText() + "(" + $pl.read + ")" + $cs.read +"\n";
 				write_rule($ctx->start->getLine(), "func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement ", $read);
 			}
 		| ts=type_specifier ID LPAREN RPAREN cs=compound_statement {
+				declare_function($ID->getText(), $ts.read, $cs.ctx->stop->getLine(), true);
 				$read = $ts.read + " " + $ID->getText() + "()" + $cs.read + "\n";
 				write_rule($ctx->start->getLine(), "func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement ", $read);
 			}
@@ -86,19 +139,19 @@ func_definition returns [std::string read]
 
 parameter_list returns [std::string read]
 		: pl=parameter_list COMMA ts=type_specifier ID { 
-				$read = $pl.read + $COMMA->getText() + $ts.read + " " + $ID->getText();
+				add_to_pl($ID->getText(), $ts.read); $read = $pl.read + $COMMA->getText() + $ts.read + " " + $ID->getText();
 				write_rule($ctx->start->getLine(), "parameter_list : parameter_list COMMA type_specifier ID", $read); 
 			}
 		| pl=parameter_list COMMA ts=type_specifier { 
-				$read = $pl.read + $COMMA->getText() + $ts.read;
+				add_to_pl("", $ts.read); $read = $pl.read + $COMMA->getText() + $ts.read;
 				write_rule($ctx->start->getLine(), "parameter_list : parameter_list COMMA type_specifier", $read); 
 			}
  		| ts=type_specifier ID { 
-				$read = $ts.read + " " + $ID->getText();
+				add_to_pl($ID->getText(), $ts.read); $read = $ts.read + " " + $ID->getText();
 				write_rule($ctx->start->getLine(), "parameter_list : type_specifier ID", $read); 
 			}
 		| ts=type_specifier { 
-				$read = $ts.read;
+				add_to_pl("", $ts.read); $read = $ts.read;
 				write_rule($ctx->start->getLine(), "parameter_list : type_specifier", $read); 
 			}
  		;
@@ -106,12 +159,12 @@ parameter_list returns [std::string read]
  		
 
 compound_statement returns [std::string read]
-		: LCURL statements RCURL {
-				$read = "{\n" + $statements.read + "\n}";
+		: LCURL {enter_scope();} statements RCURL {
+				exit_scope(); $read = "{\n" + $statements.read + "\n}";
 				write_rule($ctx->start->getLine(), "compound_statement : LCURL statements RCURL", $read); 
 			}
-		| LCURL RCURL { 
-				$read = "{\n\n}";
+		| LCURL RCURL {
+				enter_scope(); exit_scope(); $read = "{\n\n}";
 				write_rule($ctx->start->getLine(), "compound_statement : LCURL RCURL", $read); 
 			}
 		;
@@ -119,12 +172,13 @@ compound_statement returns [std::string read]
 
 var_declaration returns [std::string read]
     : t=type_specifier dl=declaration_list sm=SEMICOLON { 
+				declare_variables(true, $sm->getLine());
 				$read = $t.read + " " + $dl.read + ";";
-				write_rule($ctx->start->getLine(), "var_declaration : type_specifier declaration_list SEMICOLON" , $read); 
+				write_rule($sm->getLine(), "var_declaration : type_specifier declaration_list SEMICOLON" , $read); 
 			}
     | t=type_specifier de=declaration_list_err sm=SEMICOLON { 
 				$read = $t.read + " ERROR";
-				write_rule($ctx->start->getLine(), "var_declaration : type_specifier declaration_list_err" , $ctx->getText()); 
+				write_rule($sm->getLine(), "var_declaration : type_specifier declaration_list_err" , $ctx->getText()); 
 			}
     ;
 
@@ -145,19 +199,19 @@ type_specifier returns [std::string read]
 
 declaration_list returns [std::string read]
 		  : dl=declaration_list COMMA ID {
-					$read = std::string($ctx->getText());
+					add_to_dl($ID->getText()); $read = std::string($ctx->getText());
 					write_rule($COMMA->getLine(), "declaration_list : declaration_list COMMA ID", $ctx->getText());
 				}
  		  | dl=declaration_list COMMA ID LTHIRD CONST_INT RTHIRD {
-					$read = std::string($ctx->getText());
+					add_to_dl($ID->getText()); $read = std::string($ctx->getText());
 					write_rule($COMMA->getLine(), "declaration_list : declaration_list COMMA ID LTHIRD CONST_INT RTHIRD", $ctx->getText());
 				}
  		  | ID {
-					$read = $ID->getText();
+					add_to_dl($ID->getText()); $read = $ID->getText();
 					write_rule($ID->getLine(), "declaration_list : ID", $ID->getText());
 				}
  		  | ID LTHIRD CONST_INT RTHIRD {
-					$read = $ID->getText();
+					add_to_dl($ID->getText()); $read = $ID->getText();
 					write_rule($RTHIRD->getLine(), "declaration_list : ID LTHIRD CONST_INT RTHIRD", $ctx->getText());
 				}
  		  ;
@@ -211,9 +265,9 @@ statement returns [std::string read]
 					$read = $ctx->getText();
 					write_rule($ctx->start->getLine(), "statement : PRINTLN LPAREN ID RPAREN SEMICOLON", $ctx->getText());
 				}
-		| RETURN expression SEMICOLON {
-					$read = $ctx->getText();
-					write_rule($ctx->start->getLine(), "statement : RETURN expression SEMICOLON ", $ctx->getText());
+		| RETURN e=expression SEMICOLON {
+					$read = $RETURN->getText() + $e.ctx->getText() + ";";
+					write_rule($SEMICOLON->getLine(), "statement : RETURN expression SEMICOLON ", $read);
 				}
 		;
 

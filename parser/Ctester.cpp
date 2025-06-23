@@ -1,9 +1,12 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
+#include <utility>
 #include "antlr4-runtime.h"
 #include "C8086Lexer.h"
 #include "C8086Parser.h"
+#include "../symbol_tables/symbol_table.hpp"
 
 using namespace antlr4;
 using namespace std;
@@ -11,6 +14,12 @@ using namespace std;
 ofstream parserLogFile; // global output stream
 ofstream errorFile; // global error stream
 ofstream lexLogFile; // global lexer log stream
+
+SymbolTable symbol_table(7);
+bool is_new_scoped = false;
+vector<pair<string, string>> param_list;
+vector<string> declared_ids;
+
 
 int syntaxErrorCount;
 

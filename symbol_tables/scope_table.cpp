@@ -71,9 +71,9 @@ bool ScopeTable::insert_symbol(SymbolInfo* s_info, int * insertion_pos){
     return true;
 }
 
-bool ScopeTable::insert_symbol(SymbolInfo* s_info){
-    return this->insert_symbol(s_info, nullptr);
-}
+// bool ScopeTable::insert_symbol(SymbolInfo* s_info){
+//     return this->insert_symbol(s_info, nullptr);
+// }
 
 SymbolInfo* ScopeTable::lookup(std::string symbol, int* pos){
     int idx = this->hash_function(symbol, this->bucket_size);
@@ -88,11 +88,11 @@ SymbolInfo* ScopeTable::lookup(std::string symbol, int* pos){
 }
 
 
-SymbolInfo* ScopeTable::lookup(std::string symbol){
-    return this->lookup(symbol, nullptr);
-}
+// SymbolInfo* ScopeTable::lookup(std::string symbol){
+//     return this->lookup(symbol, nullptr);
+// }
 
-bool ScopeTable::delete_symbol(std::string symbol, int* pos=nullptr){
+bool ScopeTable::delete_symbol(std::string symbol, int* pos){
     int idx = this->hash_function(symbol, this->bucket_size);
     if(symbol_infos[idx]==nullptr) return false;
     SymbolInfo* temp = symbol_infos[idx];
