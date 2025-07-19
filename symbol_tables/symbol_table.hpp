@@ -10,6 +10,7 @@ class SymbolTable{
 private:
     ScopeTable * current_scope;
     int bucket_size, scope_count;
+    int stack_offset = -1;
     unsigned int(*hash_function)(std::string, unsigned int);
 
 public:
@@ -17,6 +18,8 @@ public:
     SymbolTable(int bucket_size);
     int enter_new_scope();
     int exit_scope();
+    int get_space_for_local_variable(Type * t);
+    int get_current_stack_offset();
     /// @brief insert a symbol inside the current scope
     /// @param s_info a pointer to the SymbolInfo object created using new operator
     /// @param pos an integer array of size 3, (scope_table_no, scope_table_row, scope_table_column) to point out the exact location of the symbol in SymbolTable
@@ -39,6 +42,7 @@ public:
     SymbolInfo * lookup(std::string symbol, int* pos=nullptr, std::string * scope_label=nullptr);
     std::string current_scope_string();
     std::string all_scope_string();
+    bool is_global_scope();
     ~SymbolTable();
 };
 

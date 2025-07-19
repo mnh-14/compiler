@@ -10,7 +10,7 @@
 
 #define ASM_FILE "code.asm"
 #define CODE_BLOCK "code.txt"
-#define PRINTLN_LIBRARY "printable.txt"
+#define PRINTLN_LIBRARY "input/printable.txt"
 
 #ifndef INDENT
 #define INDENT "    "
@@ -36,6 +36,7 @@ bool is_new_scoped = false;
 vector<pair<string, string>> param_list;
 vector<string> declared_ids;
 
+string definitions[] = {"", "DB", "DW", "DD"};
 
 int syntaxErrorCount;
 
@@ -58,8 +59,8 @@ int init_code_section(){
         return 1;
     }
     codeblock << ".CODE" << endl;
-    codeblock << "mov ax, @data" << endl;
-    codeblock << "mov dx, ax" << endl;
+    codeblock << INDENT << "mov ax, @data" << endl;
+    codeblock << INDENT << "mov dx, ax" << endl;
     return 0;
 }
 

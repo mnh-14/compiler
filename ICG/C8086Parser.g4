@@ -15,6 +15,8 @@ options {
 	#include "../symbol_tables/symbol_table.hpp"
     
     #define INDENT "    "
+
+    extern std::string definitions[];
 	
 	
     extern std::ofstream parserLogFile;
@@ -131,6 +133,22 @@ options {
 	}
 	void add_to_dl(std::string id){ declared_ids.push_back(id); }
 	void add_to_pl(std::string id, std::string type){ param_list.push_back({type, id}); }
+
+    void insert_variable_to_symbletable_and_gencode(std::string vid) {
+        std::string parts[] = {vid, "VAR"};
+        auto si = symbol_table.insert_symbol(parts);
+        Type * t = Type::construct_type(global_type);
+        si->set_type(t);
+        if (symbol_table.is_global_scope()){
+            si->set_memeory(new GlobalMemLocation(vid));
+            asmfile << INDENT << vid << " " << definitions[t->size] << " 0" << std::endl;
+        }
+        else{
+            int off = symbol_table.get_space_for_local_variable(t);
+            si->set_memeory(new MemLocation("bp", off));
+            asmfile << INDENT << "SUB SP, " << t->size << std::endl; 
+        }
+    }
 }
 
 
@@ -175,9 +193,9 @@ type_specifier returns [std::string read]
         | CHAR      { $read = $CHAR->getText(); }
         ;
 declaration_list 
-        : declaration_list COMMA ID
+        : declaration_list COMMA ID { insert_variable_to_symbletable_and_gencode($ID->getText()); }
         | declaration_list COMMA ID LTHIRD CONST_INT RTHIRD
-        | ID
+        | ID { insert_variable_to_symbletable_and_gencode($ID->getText()); }
         | ID LTHIRD CONST_INT RTHIRD
         ;
 

@@ -16,12 +16,21 @@ SymbolTable::SymbolTable(int bucket_size): SymbolTable(bucket_size, sdbm_hash) {
 
 int SymbolTable::enter_new_scope(){
     this->scope_count++;
+    if(this->is_global_scope()) stack_offset = 0;
     ScopeTable * new_scope = new ScopeTable(this->bucket_size, this->scope_count);
     new_scope->set_hash_function(this->hash_function);
     new_scope->set_parent_scope(this->current_scope);
     this->current_scope = new_scope;
     return current_scope->get_scope_no();
 }
+
+int SymbolTable::get_space_for_local_variable(Type * t){
+    int curr = stack_offset;
+    stack_offset -= t->get_size();
+    return curr;
+}
+
+int SymbolTable::get_current_stack_offset() { return stack_offset; }
 
 int SymbolTable::exit_scope(){
     if(this->current_scope == nullptr) return -1;
@@ -106,6 +115,7 @@ std::string SymbolTable::all_scope_string(){
     return represent;
 }
 
+bool SymbolTable::is_global_scope() { return current_scope->get_parent_scope() == nullptr; }
 
 SymbolTable::~SymbolTable(){
     ScopeTable* curr = this->current_scope, *temp;
