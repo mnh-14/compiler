@@ -55,10 +55,13 @@ class FunctionSymbolInfo: public SymbolInfo{
 private:
     std::string return_type;
     std::string* argument_types = nullptr;
+    int arg_byte_size = 0;
 public:
     FunctionSymbolInfo(std::string symbol, std::string symbol_type, std::string rtype, std::string* arguments);
     FunctionSymbolInfo(std::string symbol, std::string symbol_type, std::string rtype);
     void set_arguments(std::string* args);
+    void set_arg_byte_size(int sz);
+    int get_arg_byte_size();
     FunctionSymbolInfo();
     ~FunctionSymbolInfo();
     std::string get_string_repr(std::string lbrace, std::string rbrace) override;

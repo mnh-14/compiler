@@ -27,6 +27,9 @@ void SymbolInfo::set_memeory(MemLocation *ml) { this->memlocation = ml; }
 
 MemLocation* SymbolInfo::get_memory() { return this->memlocation; }
 
+void FunctionSymbolInfo::set_arg_byte_size(int sz) { this->arg_byte_size = sz; }
+int FunctionSymbolInfo::get_arg_byte_size() { return this->arg_byte_size; }
+
 SymbolInfo::SymbolInfo(std::string symbol, std::string symbol_type){
     this->symbol = symbol;
     this->symbol_type = symbol_type;

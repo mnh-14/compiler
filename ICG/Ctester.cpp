@@ -59,8 +59,8 @@ int init_code_section(){
         return 1;
     }
     codeblock << ".CODE" << endl;
-    codeblock << INDENT << "mov ax, @data" << endl;
-    codeblock << INDENT << "mov dx, ax" << endl;
+    codeblock << INDENT << "MOV AX, @DATA" << endl;
+    codeblock << INDENT << "MOV DS, AX" << endl;
     return 0;
 }
 

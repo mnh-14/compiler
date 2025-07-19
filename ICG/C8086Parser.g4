@@ -13,22 +13,7 @@ options {
 	#include <utility>
     #include "C8086Lexer.h"
 	#include "../symbol_tables/symbol_table.hpp"
-    
-    #define INDENT "    "
-
-    extern std::string definitions[];
-	
-	
-    extern std::ofstream parserLogFile;
-    extern std::ofstream errorFile;
-    extern std::ofstream codeblock;
-    extern std::ofstream asmfile;
-    extern int syntaxErrorCount;
-    extern SymbolTable symbol_table;
-    extern bool is_new_scoped;
-    extern std::vector<std::pair<std::string, std::string>> param_list;
-    extern std::vector<std::string> declared_ids;
-    extern std::string global_type;
+	#include "functions.hpp"
 }
 
 @parser::members {
@@ -54,101 +39,7 @@ options {
 	void write_rule(int line_no, std::string rule, std::string matched){
 		writeIntoparserLogFile("Line "+std::to_string(line_no)+": " + rule + "\n\n" + matched + "\n");
 	}
-	void enter_scope(){
-		if(is_new_scoped)
-			is_new_scoped=false;
-		else
-			symbol_table.enter_new_scope();
-	}
-	void exit_scope(){
-		writeIntoparserLogFile("\n"+symbol_table.all_scope_string()+"\n");
-		symbol_table.exit_scope();
-	}
-	void fn_scope(){
-		symbol_table.enter_new_scope();
-		is_new_scoped=true;
-	}
-	
-	void declare_variables(bool dl, int line, std::string type=""){
-		std::cout << "Declaring variables" << std::endl;
-		std::string var[2];
-		bool success;
-		if (dl) {
-			for(auto s:declared_ids){
-				std::cout << "ID: "<< s << " Declared" << std::endl;
-				var[0] = s; var[1] = "ID";
-				success = symbol_table.insert_symbol(var);
-				if(!success){
-					writeIntoErrorFile("Error at Line "+std::to_string(line)+" Multiple declaration of " + s + "\n");
-				}
-			}
-			declared_ids.clear();
-		} else {
-			for(auto s:param_list){
-				std::cout << "pl:ID: "<< s.first << " " << s.second << " Declared" << std::endl;
-				var[0] = s.second; var[1] = "ID";
-				success = symbol_table.insert_symbol(var);
-				if(!success){
-					writeIntoErrorFile("Error at Line "+std::to_string(line)+" Multiple declaration of " + s.second + "\n");
-				}
-			}
-			param_list.clear();
-		}
-	}
-	void declare_function2(std::string name, std::string ret, int line, bool warn=true){
-		std::string var[2];
-		bool success;
-		var[0] = name; var[1] = "ID";
-		success = symbol_table.insert_symbol(var);
-		if(!success && warn){
-			writeIntoErrorFile("Error at Line "+std::to_string(line)+" Multiple declaration of " + name + "\n");
-		}
-	}
-	void declare_function(std::string name, std::string ret, int line, bool def=false){
-        bool success = false;
-		std::string* words = new std::string[param_list.size()+4];
-		words[0] = name; words[1] = "FUNCTION"; words[2] = ret; words[param_list.size()+3]="\n";
-		for(int i=0; i<param_list.size(); i++){
-			words[i+3] = param_list.at(i).first;
-		}
-		std::string ws[2] = {name, "ID"};
-		if (def){
-			std::cout << "A function is bing defined " << name << " " << ret << std::endl;
-			success = symbol_table.insert_symbol(ws);
-			if(!success){
-				// writeIntoErrorFile("Error at Line "+std::to_string(line)+" Multiple declaration of function " + name + "\n");
-			}
-			declare_variables(false, line);
-		} else {
-			std::cout << "A function is bing declared " << name << " " << ret << std::endl;
-			for(auto s:param_list){
-				std::cout << "pl:ID: "<< s.second << " Declared" << std::endl;
-			}
-			success = symbol_table.insert_symbol(words);
-			if(!success){
-				writeIntoErrorFile("Error at Line "+std::to_string(line)+" Multiple declaration of function " + name + "\n");
-			}
-			param_list.clear();
-		}
-	}
-	void add_to_dl(std::string id){ declared_ids.push_back(id); }
-	void add_to_pl(std::string id, std::string type){ param_list.push_back({type, id}); }
 
-    void insert_variable_to_symbletable_and_gencode(std::string vid) {
-        std::string parts[] = {vid, "VAR"};
-        auto si = symbol_table.insert_symbol(parts);
-        Type * t = Type::construct_type(global_type);
-        si->set_type(t);
-        if (symbol_table.is_global_scope()){
-            si->set_memeory(new GlobalMemLocation(vid));
-            asmfile << INDENT << vid << " " << definitions[t->size] << " 0" << std::endl;
-        }
-        else{
-            int off = symbol_table.get_space_for_local_variable(t);
-            si->set_memeory(new MemLocation("bp", off));
-            asmfile << INDENT << "SUB SP, " << t->size << std::endl; 
-        }
-    }
 }
 
 
@@ -168,17 +59,17 @@ func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON
         | type_specifier ID LPAREN RPAREN SEMICOLON
         ;
 
-func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement
-    | type_specifier ID LPAREN RPAREN compound_statement
+func_definition : ts=type_specifier ID { entering_function($ID->getText(), $ts.read, $ID->getLine()); } LPAREN parameter_list RPAREN compound_statement
+    | ts=type_specifier ID { entering_function($ID->getText(), $ts.read, $ID->getLine()); } LPAREN RPAREN compound_statement
     ;
 
-parameter_list : parameter_list COMMA type_specifier ID
+parameter_list : parameter_list COMMA type_specifier { global_type=$ts.read; } ID {}
         | parameter_list COMMA type_specifier
-        | type_specifier ID
+        | ts=type_specifier { global_type=$ts.read; } ID {}
         | type_specifier
         ;
 
-compound_statement : LCURL statements RCURL
+compound_statement : LCURL {enter_scope();} statements RCURL {exit_scope();}
         | LCURL RCURL
         ;
 
