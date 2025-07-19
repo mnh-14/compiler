@@ -19,12 +19,17 @@ void SymbolInfo::set_next_symbolinfo(SymbolInfo* s_info){ this->next_symbolinfo 
 
 SymbolInfo* SymbolInfo::get_next_symbolinfo(){ return this->next_symbolinfo; }
 
+void SymbolInfo::set_type(Type * t) { this->info_type = t; }
+
+Type* SymbolInfo::get_type() { return this->info_type; }
+
 SymbolInfo::SymbolInfo(std::string symbol, std::string symbol_type){
     this->symbol = symbol;
     this->symbol_type = symbol_type;
 }
 
 SymbolInfo::~SymbolInfo(){
+    delete info_type;
 }
 
 std::string SymbolInfo::get_string_repr(std::string lbrace, std::string rbrace){

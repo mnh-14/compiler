@@ -5,6 +5,7 @@
 #include <string>
 #include <iostream>
 #include "./tools.hpp"
+#include "./types.hpp"
 
 
 
@@ -13,6 +14,7 @@ private:
     std::string symbol;
     std::string symbol_type;
     SymbolInfo* next_symbolinfo = nullptr;
+    Type* info_type = nullptr;
 public:
     SymbolInfo(std::string symbol, std::string symbol_type);
     SymbolInfo();
@@ -22,6 +24,8 @@ public:
     std::string get_symbol_type();
     void set_next_symbolinfo(SymbolInfo* s_info);
     SymbolInfo* get_next_symbolinfo();
+    void set_type(Type * t);
+    Type* get_type();
     virtual std::string get_string_repr(std::string lbrace, std::string rbrace);
     virtual std::string get_string_repr();
     virtual ~SymbolInfo();

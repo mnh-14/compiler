@@ -4,6 +4,7 @@ g++ -std=c++17 -c ../symbol_tables/symbol_info.cpp -o bin/sinfo.o
 g++ -std=c++17 -c ../symbol_tables/scope_table.cpp -o bin/scope.o
 g++ -std=c++17 -c ../symbol_tables/symbol_table.cpp -o bin/stable.o
 g++ -std=c++17 -c ../symbol_tables/hash_functions.cpp -o bin/hashes.o
+g++ -std=c++17 -c ../symbol_tables/types.cpp -o bin/types.o
 g++ -std=c++17 -w -I/usr/local/include/antlr4-runtime -c C8086Lexer.cpp -o bin/C8086Lexer.o
 g++ -std=c++17 -w -I/usr/local/include/antlr4-runtime -c C8086Parser.cpp -o bin/C8086Parser.o
 g++ -std=c++17 -w -I/usr/local/include/antlr4-runtime -c Ctester.cpp -o bin/Ctester.o
