@@ -40,7 +40,7 @@ bool SymbolTable::insert_symbol(SymbolInfo* s_info, int* pos){
     return this->current_scope->insert_symbol(s_info, pos+1);
 }
 
-bool SymbolTable::insert_symbol(std::string* parts, int * pos){
+SymbolInfo* SymbolTable::insert_symbol(std::string* parts, int * pos){
     SymbolInfo * s_info;
     if(parts[1]=="FUNCTION")
         s_info = new FunctionSymbolInfo(parts[0], parts[1], parts[2], parts+3);
@@ -49,9 +49,11 @@ bool SymbolTable::insert_symbol(std::string* parts, int * pos){
     else
         s_info = new SymbolInfo(parts[0], parts[1]);
     bool success = this->insert_symbol(s_info, pos);
-    if(!success)
+    if(!success){
         delete s_info;
-    return success;
+        return nullptr;
+    }
+    return s_info;
 }
 
 SymbolInfo* SymbolTable::lookup(std::string symbol, int* pos, std::string * scope_label){

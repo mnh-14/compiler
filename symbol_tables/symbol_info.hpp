@@ -15,6 +15,7 @@ private:
     std::string symbol_type;
     SymbolInfo* next_symbolinfo = nullptr;
     Type* info_type = nullptr;
+    MemLocation *memlocation;
 public:
     SymbolInfo(std::string symbol, std::string symbol_type);
     SymbolInfo();
@@ -26,6 +27,8 @@ public:
     SymbolInfo* get_next_symbolinfo();
     void set_type(Type * t);
     Type* get_type();
+    void set_memeory(MemLocation *ml);
+    MemLocation* get_memory();
     virtual std::string get_string_repr(std::string lbrace, std::string rbrace);
     virtual std::string get_string_repr();
     virtual ~SymbolInfo();

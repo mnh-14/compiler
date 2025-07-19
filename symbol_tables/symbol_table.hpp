@@ -26,7 +26,7 @@ public:
     /// @param parts array of strings, required to create a symbol info instance. follows format [name, type, return_type(if function), function_arguments | structure elements]
     /// @param pos an integer array of size 3, (scope_table_no, scope_table_row, scope_table_column) to point out the exact location of the symbol in SymbolTable
     /// @return true if insertion was successfull, false otherwise
-    bool insert_symbol(std::string* parts, int * pos=nullptr);
+    SymbolInfo* insert_symbol(std::string* parts, int * pos=nullptr);
     /// @brief removes the desired symbol from the scope table
     /// @param symbol the desired symbols symbol name
     /// @param pos an integer array of size 3, (scope_table_no, scope_table_row, scope_table_column) to point out the exact location of the symbol in SymbolTable

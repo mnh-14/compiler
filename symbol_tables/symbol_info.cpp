@@ -23,6 +23,10 @@ void SymbolInfo::set_type(Type * t) { this->info_type = t; }
 
 Type* SymbolInfo::get_type() { return this->info_type; }
 
+void SymbolInfo::set_memeory(MemLocation *ml) { this->memlocation = ml; }
+
+MemLocation* SymbolInfo::get_memory() { return this->memlocation; }
+
 SymbolInfo::SymbolInfo(std::string symbol, std::string symbol_type){
     this->symbol = symbol;
     this->symbol_type = symbol_type;
