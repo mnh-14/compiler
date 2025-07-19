@@ -54,7 +54,7 @@ options {
 			symbol_table.enter_new_scope();
 	}
 	void exit_scope(){
-		writeIntoparserLogFile("\n"+symbol_table.current_scope_string()+"\n");
+		writeIntoparserLogFile("\n"+symbol_table.all_scope_string()+"\n");
 		symbol_table.exit_scope();
 	}
 	void fn_scope(){
@@ -62,28 +62,64 @@ options {
 		is_new_scoped=true;
 	}
 	
-	void declare_variables(bool dl, int line){
+	void declare_variables(bool dl, int line, std::string type=""){
 		std::cout << "Declaring variables" << std::endl;
+		std::string var[2];
+		bool success;
 		if (dl) {
 			for(auto s:declared_ids){
 				std::cout << "ID: "<< s << " Declared" << std::endl;
-			declared_ids.clear();
+				var[0] = s; var[1] = "ID";
+				success = symbol_table.insert_symbol(var);
+				if(!success){
+					writeIntoErrorFile("Error at Line "+std::to_string(line)+" Multiple declaration of " + s + "\n");
+				}
 			}
+			declared_ids.clear();
 		} else {
 			for(auto s:param_list){
 				std::cout << "pl:ID: "<< s.first << " " << s.second << " Declared" << std::endl;
+				var[0] = s.second; var[1] = "ID";
+				success = symbol_table.insert_symbol(var);
+				if(!success){
+					writeIntoErrorFile("Error at Line "+std::to_string(line)+" Multiple declaration of " + s.second + "\n");
+				}
 			}
 			param_list.clear();
 		}
 	}
+	void declare_function2(std::string name, std::string ret, int line, bool warn=true){
+		std::string var[2];
+		bool success;
+		var[0] = name; var[1] = "ID";
+		success = symbol_table.insert_symbol(var);
+		if(!success && warn){
+			writeIntoErrorFile("Error at Line "+std::to_string(line)+" Multiple declaration of " + name + "\n");
+		}
+	}
 	void declare_function(std::string name, std::string ret, int line, bool def=false){
+        bool success = false;
+		std::string* words = new std::string[param_list.size()+4];
+		words[0] = name; words[1] = "FUNCTION"; words[2] = ret; words[param_list.size()+3]="\n";
+		for(int i=0; i<param_list.size(); i++){
+			words[i+3] = param_list.at(i).first;
+		}
+		std::string ws[2] = {name, "ID"};
 		if (def){
 			std::cout << "A function is bing defined " << name << " " << ret << std::endl;
+			success = symbol_table.insert_symbol(ws);
+			if(!success){
+				// writeIntoErrorFile("Error at Line "+std::to_string(line)+" Multiple declaration of function " + name + "\n");
+			}
 			declare_variables(false, line);
 		} else {
 			std::cout << "A function is bing declared " << name << " " << ret << std::endl;
 			for(auto s:param_list){
 				std::cout << "pl:ID: "<< s.second << " Declared" << std::endl;
+			}
+			success = symbol_table.insert_symbol(words);
+			if(!success){
+				writeIntoErrorFile("Error at Line "+std::to_string(line)+" Multiple declaration of function " + name + "\n");
 			}
 			param_list.clear();
 		}
@@ -99,25 +135,25 @@ start : program {
 	;
 
 program returns [std::string read]
-	: unit { $read=$unit.read; write_rule($unit.ctx->stop->getLine(), "program : unit", $unit.read+"\n"); }
-	| p=program u=unit { $read=$p.read+"\n"+$u.read; write_rule($u.ctx->stop->getLine(), "program : program unit", $read+"\n"); }
+	: unit { $read=$unit.read; write_rule($unit.ctx->stop->getLine(), "program : unit", $unit.read); }
+	| p=program u=unit { $read=$p.read+"\n"+$u.read; write_rule($u.ctx->stop->getLine(), "program : program unit", $read); }
 	;
 	
 unit returns [std::string read]
-	 : vd=var_declaration { write_rule($ctx->start->getLine(), "unit : var_declaration", $vd.read+"\n"); $read=$vd.read; }
-     | fdl=func_declaration { write_rule($ctx->start->getLine(), "unit : func_declaration", $fdl.read+"\n"); $read=$fdl.read; }
-     | fdf=func_definition { write_rule($ctx->start->getLine(), "unit : func_definition", $fdf.read+"\n"); $read=$fdf.read; }
+	 : vd=var_declaration { write_rule($ctx->start->getLine(), "unit : var_declaration", $vd.read); $read=$vd.read; }
+     | fdl=func_declaration { write_rule($ctx->start->getLine(), "unit : func_declaration", $fdl.read); $read=$fdl.read; }
+     | fdf=func_definition { write_rule($ctx->start->getLine(), "unit : func_definition", $fdf.read); $read=$fdf.read; }
      ;
      
 
 func_declaration returns [std::string read]
 		: ts=type_specifier ID LPAREN pl=parameter_list RPAREN SEMICOLON {
-				declare_function($ID->getText(), $ts.read, $SEMICOLON->getLine());
+				declare_function2($ID->getText(), $ts.read, $SEMICOLON->getLine());
 				$read = $ts.read + " " + $ID->getText() + "(" + $pl.read + ");";
 				write_rule($ctx->start->getLine(), "func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON ", $read);
 			}
 		| ts=type_specifier ID LPAREN RPAREN SEMICOLON { 
-				declare_function($ID->getText(), $ts.read, $SEMICOLON->getLine());
+				declare_function2($ID->getText(), $ts.read, $SEMICOLON->getLine());
 				$read = $ts.read + " " + $ID->getText() + "();";
 				write_rule($ctx->start->getLine(), "func_declaration : type_specifier ID LPAREN RPAREN SEMICOLON ", $read);
 			}
@@ -125,7 +161,7 @@ func_declaration returns [std::string read]
 		 
 
 func_definition returns [std::string read]
-		: ts=type_specifier ID LPAREN { fn_scope(); } pl=parameter_list r=RPAREN {declare_function($ID->getText(), $ts.read, $r->getLine(), true);} cs=compound_statement {
+		: ts=type_specifier ID {declare_function2($ID->getText(), $ts.read, $ID->getLine(), false);} LPAREN { fn_scope(); } pl=parameter_list r=RPAREN {declare_function($ID->getText(), $ts.read, $r->getLine(), true);} cs=compound_statement {
 				$read = $ts.read + " " + $ID->getText() + "(" + $pl.read + ")" + $cs.read +"\n";
 				write_rule($ctx->start->getLine(), "func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement ", $read);
 			}
@@ -160,12 +196,14 @@ parameter_list returns [std::string read]
 
 compound_statement returns [std::string read]
 		: LCURL {enter_scope();} statements RCURL {
-				exit_scope(); $read = "{\n" + $statements.read + "\n}";
-				write_rule($ctx->start->getLine(), "compound_statement : LCURL statements RCURL", $read); 
+				$read = "{\n" + $statements.read + "\n}";
+				write_rule($ctx->start->getLine(), "compound_statement : LCURL statements RCURL", $read);
+				exit_scope();
 			}
 		| LCURL RCURL {
-				enter_scope(); exit_scope(); $read = "{\n\n}";
+				enter_scope(); $read = "{\n\n}";
 				write_rule($ctx->start->getLine(), "compound_statement : LCURL RCURL", $read); 
+				exit_scope();
 			}
 		;
  		    
@@ -266,7 +304,7 @@ statement returns [std::string read]
 					write_rule($ctx->start->getLine(), "statement : PRINTLN LPAREN ID RPAREN SEMICOLON", $ctx->getText());
 				}
 		| RETURN e=expression SEMICOLON {
-					$read = $RETURN->getText() + $e.ctx->getText() + ";";
+					$read = $RETURN->getText() + " " + $e.ctx->getText() + ";";
 					write_rule($SEMICOLON->getLine(), "statement : RETURN expression SEMICOLON ", $read);
 				}
 		;
@@ -319,7 +357,7 @@ rel_expression
 				
 simple_expression 
 		: term {
-					write_rule($ctx->start->getLine(), "simple_expressio : term", $ctx->getText());
+					write_rule($ctx->start->getLine(), "simple_expression : term", $ctx->getText());
 				}
 		| simple_expression ADDOP term {
 					write_rule($ctx->start->getLine(), "simple_expressio : simple_expression ADDOP term", $ctx->getText());
