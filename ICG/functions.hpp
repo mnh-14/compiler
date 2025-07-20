@@ -8,13 +8,16 @@
 #include <vector>
 #include <utility>
 #include <stack>
+#include <vector>
 #include "../symbol_tables/symbol_table.hpp"
 
 #define INDENT "    "
 
 extern std::string definitions[];
 
-extern std::stack<pair<std::string, std::string>> tf_labels;
+extern std::stack<std::pair<std::string, std::string>> tf_labels;
+extern std::stack<std::string> loop_label;
+extern std::vector<std::pair<int, int>> tf_label_use_count;
 
 
 extern std::ofstream parserLogFile;
@@ -42,5 +45,14 @@ std::string get_memloc(std::string id);
 void move(std::string a, std::string b, int line=-1);
 void mulop_asmcode(std::string mulop);
 std::string new_label();
+std::string new_loop_label();
+void generate_new_tf_labels();
+void place_true_label();
+void place_false_label();
+void pop_used_label();
+void write_loop_label();
+void write_jump_loop();
+void pop_loop_label();
+void write_assign_asmcode(std::string mem, bool is_simple);
 
 #endif

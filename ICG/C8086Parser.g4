@@ -111,21 +111,22 @@ expression_statement : SEMICOLON
         | expression SEMICOLON
         ;
 
-variable returns [std::string mem]
-		: ID	{ $mem = get_memloc($ID->getText()); }
+variable returns [std::string mem, std::string id]
+		: ID	{ $mem = get_memloc($ID->getText()); $id=$ID->getText(); }
         | ID LTHIRD expression RTHIRD
         ;
 expression : logic_expression
-        | v=variable ASSIGNOP logic_expression { move($v.mem, "AX"); }
+        | v=variable ASSIGNOP { generate_new_tf_labels(); } le=logic_expression { write_assign_asmcode($v.mem, $le.is_simple); pop_used_label(); }
         ;
-logic_expression : rel_expression
-        | rel_expression LOGICOP rel_expression
+logic_expression returns [bool is_simple]
+        : re=rel_expression { $is_simple = $re.is_simple; }
+        | rel_expression LOGICOP rel_expression { $is_simple = false; }
         ;
         
 
-rel_expression
-        : simple_expression
-        | simple_expression RELOP simple_expression
+rel_expression returns [bool is_simple]
+        : simple_expression { $is_simple = true; }
+        | simple_expression RELOP simple_expression { $is_simple = false; }
         ;
 simple_expression 
         : term 

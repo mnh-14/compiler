@@ -3,7 +3,10 @@
 using namespace std;
 
 static int global_label_count = 0;
-std::stack<pair<std::string, std::string>> tf_labels;
+static int loop_label_count = 0;
+stack<pair<string, string>> tf_labels;
+stack<string> loop_label;
+vector<pair<int, int>> tf_label_use_count;
 
 
 void insert_variable_to_symbletable_and_gencode(string vid) {
@@ -113,12 +116,55 @@ string new_label(){
     return "L"+to_string(global_label_count);
 }
 
+string new_loop_label(){
+    loop_label_count++;
+    loop_label.push("LOOP_"+to_string(loop_label_count));
+    return loop_label.top();
+}
+
 
 void generate_new_tf_labels(){
     tf_labels.push({new_label(), new_label()});
+    tf_label_use_count.push_back({0, 0});
 }
 
-void place_true_label(){
+void place_true_label(){ // Don't add the label if never used
+    if(tf_label_use_count.back().first==0) return;
     string true_label = tf_labels.top().first;
     codeblock << true_label << ':' << endl;
+}
+
+void place_false_label(){ // Don't add the label if never used
+    if(tf_label_use_count.back().second==0) return;
+    string false_label = tf_labels.top().second;
+    codeblock << false_label << ':' << endl;
+}
+
+void pop_used_label(){
+    tf_labels.pop();
+    tf_label_use_count.pop_back();
+}
+
+void write_loop_label(){
+    codeblock << new_loop_label() << ':' << endl;
+}
+
+void write_jump_loop(){
+    codeblock << INDENT << "JMP " << loop_label.top() << endl;
+}
+
+void pop_loop_label(){
+    loop_label.pop();
+}
+
+
+void write_assign_asmcode(string mem, bool is_simple){
+    if(!is_simple){
+        cout<<"Writing non simple expressions for assignment"<<endl;
+        place_true_label();
+        move("AX", "1");
+        place_false_label();
+        move("AX", "0");
+    }
+    move(mem, "AX");
 }
