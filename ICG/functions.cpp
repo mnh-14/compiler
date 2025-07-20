@@ -32,6 +32,10 @@ void exit_scope(){
     symbol_table.exit_scope();
 }
 
+void anything(){
+    string mem;
+    mem = symbol_table.lookup("am")->get_memory();
+}
 
 void entering_function(string fid, string rettype, int line_no){
     FunctionSymbolInfo* si;

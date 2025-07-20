@@ -107,7 +107,9 @@ statement : var_declaration
 expression_statement : SEMICOLON
         | expression SEMICOLON
         ;
-variable : ID
+
+variable returns [std::string mem]
+		: ID	{ $mem = symbol_table.lookup($ID->getText)->get_memory(); }
         | ID LTHIRD expression RTHIRD
         ;
 expression : logic_expression
