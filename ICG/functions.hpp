@@ -31,3 +31,4 @@ void enter_scope();
 void exit_scope();
 void entering_function(std::string fid, std::string rettype, int line_no);
 void finishing_function(std::string fid);
+std::string addop_asmcode(std::string addop);

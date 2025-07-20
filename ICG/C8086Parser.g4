@@ -59,8 +59,8 @@ func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON
         | type_specifier ID LPAREN RPAREN SEMICOLON
         ;
 
-func_definition : ts=type_specifier ID { entering_function($ID->getText(), $ts.read, $ID->getLine()); } LPAREN parameter_list RPAREN compound_statement
-    | ts=type_specifier ID { entering_function($ID->getText(), $ts.read, $ID->getLine()); } LPAREN RPAREN compound_statement
+func_definition : ts=type_specifier ID {entering_function($ID->getText(),$ts.read,$ID->getLine());} LPAREN parameter_list RPAREN compound_statement {finishing_function($ID->getText());}
+    | ts=type_specifier ID { entering_function($ID->getText(), $ts.read, $ID->getLine()); } LPAREN RPAREN compound_statement {finishing_function($ID->getText());}
     ;
 
 parameter_list : parameter_list COMMA type_specifier { global_type=$ts.read; } ID {}
@@ -101,7 +101,10 @@ statement : var_declaration
         | IF LPAREN expression RPAREN statement
         | IF LPAREN expression RPAREN statement ELSE statement
         | WHILE LPAREN expression RPAREN statement
-        | PRINTLN LPAREN ID RPAREN SEMICOLON
+        | PRINTLN LPAREN ID RPAREN SEMICOLON { 
+										codeblock << INDENT << "MOV AX, " << symbol_table.lookup($ID->getText())->get_memory()->get_location() << std::endl;
+										codeblock << INDENT << "CALL println" << 
+									}
         | RETURN expression SEMICOLON
         ;
 expression_statement : SEMICOLON
@@ -123,8 +126,9 @@ logic_expression : rel_expression
 rel_expression : simple_expression
         | simple_expression RELOP simple_expression
         ;
-simple_expression : term
-        | simple_expression ADDOP term
+simple_expression 
+		: term 
+        | simple_expression { codeblock << INDENT << "MOV CX, AX" << std::endl; } ADDOP term { codeblock << addop_asmcode($ADDOP->getText()) << " AX, CX" << std::endl; }
         ;
 term : unary_expression
         | term MULOP unary_expression
@@ -139,8 +143,8 @@ factor : variable
         | LPAREN expression RPAREN
         | CONST_INT		{ codeblock << INDENT << "MOV AX, " << $CONST_INT->getText() << std::endl; }
         | CONST_FLOAT
-        | variable INCOP
-        | variable DECOP
+        | v=variable INCOP { codeblock << INDENT << "MOV AX, " << $v.mem << std::endl << INDENT << "INC " << $v.mem << std::endl; }
+        | v=variable DECOP { codeblock << INDENT << "MOV AX, " << $v.mem << std::endl << INDENT << "DEC " << $v.mem << std::endl; }
         ;
 argument_list : arguments
         ;

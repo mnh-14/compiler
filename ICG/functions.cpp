@@ -57,3 +57,10 @@ void finishing_function(string fid){
     codeblock << "ENDP " << fid << endl;
 }
 
+string addop_asmcode(string addop){
+    switch(addop[0]){
+        case '+': return "ADD";
+        case '-': return "SUB";
+    }
+    return "?";
+}

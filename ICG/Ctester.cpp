@@ -49,6 +49,7 @@ int init_asm_code(){
     }
     
     asmfile << ".MODEL SMALL" << endl << ".STACK 1000H" << endl << ".DATA" << endl;
+    asmfile << INDENT <<"number DB \"00000$\"" << endl;
     return 0;
 }
 
@@ -61,6 +62,8 @@ int init_code_section(){
     codeblock << ".CODE" << endl;
     codeblock << INDENT << "MOV AX, @DATA" << endl;
     codeblock << INDENT << "MOV DS, AX" << endl;
+    codeblock << INDENT << "CALL main" << endl;
+    codeblock << INDENT << "INT 21H" << endl;
     return 0;
 }
 
