@@ -102,8 +102,8 @@ statement : var_declaration
         | IF LPAREN expression RPAREN statement ELSE statement
         | WHILE LPAREN expression RPAREN statement
         | PRINTLN LPAREN ID RPAREN SEMICOLON { 
-										codeblock << INDENT << "MOV AX, " << symbol_table.lookup($ID->getText())->get_memory()->get_location() << std::endl;
-										codeblock << INDENT << "CALL println" << 
+										codeblock << INDENT << "MOV AX, " << get_memloc($ID->getText()) << std::endl;
+										codeblock << INDENT << "CALL println" << std::endl;
 									}
         | RETURN expression SEMICOLON
         ;
@@ -112,7 +112,7 @@ expression_statement : SEMICOLON
         ;
 
 variable returns [std::string mem]
-		: ID	{ $mem = symbol_table.lookup($ID->getText())->get_memory()->get_location(); }
+		: ID	{ $mem = get_memloc($ID->getText()); }
         | ID LTHIRD expression RTHIRD
         ;
 expression : logic_expression
@@ -128,7 +128,7 @@ rel_expression : simple_expression
         ;
 simple_expression 
 		: term 
-        | simple_expression { codeblock << INDENT << "MOV CX, AX" << std::endl; } ADDOP term { codeblock << addop_asmcode($ADDOP->getText()) << " AX, CX" << std::endl; }
+        | simple_expression { codeblock << INDENT << "MOV CX, AX" << std::endl; } ADDOP term { codeblock<<INDENT<<addop_asmcode($ADDOP->getText())<< " AX, CX" <<std::endl; }
         ;
 term : unary_expression
         | term MULOP unary_expression
@@ -138,14 +138,18 @@ unary_expression : ADDOP unary_expression
         | factor
         ;
 
-factor : variable
-        | ID LPAREN argument_list RPAREN
-        | LPAREN expression RPAREN
-        | CONST_INT		{ codeblock << INDENT << "MOV AX, " << $CONST_INT->getText() << std::endl; }
-        | CONST_FLOAT
-        | v=variable INCOP { codeblock << INDENT << "MOV AX, " << $v.mem << std::endl << INDENT << "INC " << $v.mem << std::endl; }
-        | v=variable DECOP { codeblock << INDENT << "MOV AX, " << $v.mem << std::endl << INDENT << "DEC " << $v.mem << std::endl; }
-        ;
+
+factor 
+    : v=variable   { codeblock << INDENT << "MOV AX, " << $v.mem << std::endl; }
+    | ID LPAREN argument_list RPAREN
+    | LPAREN expression RPAREN
+    | CONST_INT		{ codeblock << INDENT << "MOV AX, " << $CONST_INT->getText() << std::endl; }
+    | CONST_FLOAT
+    | v=variable INCOP { codeblock << INDENT << "MOV AX, " << $v.mem << std::endl << INDENT << "INC " << $v.mem << std::endl; }
+    | v=variable DECOP { codeblock << INDENT << "MOV AX, " << $v.mem << std::endl << INDENT << "DEC " << $v.mem << std::endl; }
+    ;
+    
+
 argument_list : arguments
         ;
 arguments : arguments COMMA logic_expression

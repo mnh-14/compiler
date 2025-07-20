@@ -53,8 +53,8 @@ void entering_function(string fid, string rettype, int line_no){
 }
 
 void finishing_function(string fid){
-    codeblock << "RET " << 2 << endl;
-    codeblock << "ENDP " << fid << endl;
+    codeblock << INDENT << "RET " << 0 << endl;
+    codeblock << "ENDP " << fid << endl << endl;
 }
 
 string addop_asmcode(string addop){
@@ -63,4 +63,8 @@ string addop_asmcode(string addop){
         case '-': return "SUB";
     }
     return "?";
+}
+
+string get_memloc(string id){
+    return symbol_table.lookup(id)->get_memory()->get_location();
 }
