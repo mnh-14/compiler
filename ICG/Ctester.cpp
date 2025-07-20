@@ -63,6 +63,7 @@ int init_code_section(){
     codeblock << INDENT << "MOV AX, @DATA" << endl;
     codeblock << INDENT << "MOV DS, AX" << endl;
     codeblock << INDENT << "CALL main" << endl;
+    codeblock << INDENT << "MOV AX, 4CH" << endl;
     codeblock << INDENT << "INT 21H" << endl;
     return 0;
 }

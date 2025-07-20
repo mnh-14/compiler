@@ -98,12 +98,12 @@ statement : var_declaration
         | expression_statement
         | compound_statement
         | FOR LPAREN expression_statement expression_statement expression RPAREN statement
-        | IF LPAREN expression RPAREN statement
         | IF LPAREN expression RPAREN statement ELSE statement
+        | IF LPAREN expression RPAREN statement
         | WHILE LPAREN expression RPAREN statement
         | PRINTLN LPAREN ID RPAREN SEMICOLON { 
-										codeblock << INDENT << "MOV AX, " << get_memloc($ID->getText()) << std::endl;
-										codeblock << INDENT << "CALL println" << std::endl;
+                                        move("AX", get_memloc($ID->getText()));
+										codeblock << INDENT << "CALL print_output" << std::endl;
 									}
         | RETURN expression SEMICOLON
         ;
@@ -116,22 +116,23 @@ variable returns [std::string mem]
         | ID LTHIRD expression RTHIRD
         ;
 expression : logic_expression
-        | v=variable ASSIGNOP logic_expression { codeblock << INDENT << "MOV " << $v.mem << ", AX" << std::endl; }
+        | v=variable ASSIGNOP logic_expression { move($v.mem, "AX"); }
         ;
 logic_expression : rel_expression
         | rel_expression LOGICOP rel_expression
         ;
         
 
-rel_expression : simple_expression
+rel_expression
+        : simple_expression
         | simple_expression RELOP simple_expression
         ;
 simple_expression 
-		: term 
-        | simple_expression { codeblock << INDENT << "MOV CX, AX" << std::endl; } ADDOP term { codeblock<<INDENT<<addop_asmcode($ADDOP->getText())<< " AX, CX" <<std::endl; }
+        : term 
+        | simple_expression { move("CX", "AX"); } ADDOP term { addop_asmcode($ADDOP->getText()); }
         ;
 term : unary_expression
-        | term MULOP unary_expression
+        | term { move("CX", "AX"); } MULOP unary_expression { mulop_asmcode($MULOP->getText()); }
         ;
 unary_expression : ADDOP unary_expression
         | NOT unary_expression
@@ -140,13 +141,13 @@ unary_expression : ADDOP unary_expression
 
 
 factor 
-    : v=variable   { codeblock << INDENT << "MOV AX, " << $v.mem << std::endl; }
+    : v=variable   { move("AX", $v.mem); }
     | ID LPAREN argument_list RPAREN
     | LPAREN expression RPAREN
     | CONST_INT		{ codeblock << INDENT << "MOV AX, " << $CONST_INT->getText() << std::endl; }
     | CONST_FLOAT
-    | v=variable INCOP { codeblock << INDENT << "MOV AX, " << $v.mem << std::endl << INDENT << "INC " << $v.mem << std::endl; }
-    | v=variable DECOP { codeblock << INDENT << "MOV AX, " << $v.mem << std::endl << INDENT << "DEC " << $v.mem << std::endl; }
+    | v=variable INCOP { move("AX", $v.mem); codeblock << INDENT << "INC " << $v.mem << std::endl; }
+    | v=variable DECOP { move("AX", $v.mem); codeblock << INDENT << "DEC " << $v.mem << std::endl; }
     ;
     
 
