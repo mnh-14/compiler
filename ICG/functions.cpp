@@ -2,11 +2,17 @@
 
 using namespace std;
 
+
+Label::Label(string l): label(l) {}
+
 static int global_label_count = 0;
 static int loop_label_count = 0;
-stack<pair<string, string>> tf_labels;
+// stack<pair<string, string>> tf_labels;
+vector<pair<Label*, Label*>> tf_labels;
 stack<string> loop_label;
 vector<pair<int, int>> tf_label_use_count;
+vector<Label *> label_stream;
+stack<pair<bool, bool>> tf_jumpable;
 
 
 void insert_variable_to_symbletable_and_gencode(string vid) {
@@ -111,9 +117,9 @@ void mulop_asmcode(string mulop){
 }
 
 
-string new_label(){
+Label* new_label(){
     global_label_count++;
-    return "L"+to_string(global_label_count);
+    return new Label("L"+to_string(global_label_count));
 }
 
 string new_loop_label(){
@@ -123,33 +129,45 @@ string new_loop_label(){
 }
 
 
-void generate_new_tf_labels(){
-    tf_labels.push({new_label(), new_label()});
+void generate_new_tf_labels(bool true_label, bool false_label){
+    Label * tl, * fl;
+
+    if(true_label) tl = new_label();
+    else tl = tf_labels.back().first;
+
+    if(false_label) fl = new_label();
+    else fl = tf_labels.back().second;
+
+    fl->ref_count++; tl->ref_count++;
+    tf_labels.push_back({tl, fl});
     tf_label_use_count.push_back({0, 0});
 }
 
 void place_true_label(){ // Don't add the label if never used
-    if(tf_label_use_count.back().first==0) return;
-    string true_label = tf_labels.top().first;
+    if(tf_labels.back().first->use_count==0) return;
+    string true_label = tf_labels.back().first->label;
     codeblock << true_label << ':' << endl;
 }
 
 void place_false_label(){ // Don't add the label if never used
-    if(tf_label_use_count.back().second==0) return;
-    string false_label = tf_labels.top().second;
+    if(tf_labels.back().second->use_count==0) return;
+    string false_label = tf_labels.back().second->label;
     codeblock << false_label << ':' << endl;
 }
 
-void pop_used_label(){
-    tf_labels.pop();
-    tf_label_use_count.pop_back();
+void pop_used_tf_label(){
+    auto p = tf_labels.back();
+    tf_labels.pop_back();
+    p.first->ref_count--; p.second->ref_count--;
+    if(p.first->ref_count==0) delete p.first;
+    if(p.second->ref_count==0) delete p.second;
 }
 
-void write_loop_label(){
+void place_loop_label(){
     codeblock << new_loop_label() << ':' << endl;
 }
 
-void write_jump_loop(){
+void place_jump_loop(){
     codeblock << INDENT << "JMP " << loop_label.top() << endl;
 }
 
@@ -163,8 +181,89 @@ void write_assign_asmcode(string mem, bool is_simple){
         cout<<"Writing non simple expressions for assignment"<<endl;
         place_true_label();
         move("AX", "1");
+        jump_to(get_new_single_label());
         place_false_label();
         move("AX", "0");
+        place_single_label();
+        pop_single_label();
     }
     move(mem, "AX");
+}
+
+void place_single_label(){
+    auto l = label_stream.back();
+    codeblock << l->label << ':' << endl;
+}
+
+void pop_single_label(){
+    auto l = label_stream.back();
+    label_stream.pop_back();
+    delete l;
+}
+
+void jump_to_current_single_label(){
+    jump_to(label_stream.back()->label);
+    // if(tf_labels.back().first->use_count==0) cout << "HEllo";
+}
+
+string get_new_single_label(){
+    auto l = new_label();
+    label_stream.push_back(l);
+    l->ref_count++;
+    l->use_count++;
+    return l->label;
+}
+
+void jump_to(string label){
+    codeblock << INDENT << "JMP " << label << endl; 
+}
+
+string asmop_for_cmp(string cmpop){
+    if(cmpop==">=") return "JGE";
+    if(cmpop==">") return "JG";
+    if(cmpop=="<=") return "JLE";
+    if(cmpop=="<") return "JL";
+    if(cmpop=="==") return "JE";
+    if(cmpop=="!=") return "JNE";
+    return "?";
+}
+
+string asmop_for_cmp(string cmpop, bool){
+    if(cmpop==">=") return "JL";
+    if(cmpop==">") return "JLE";
+    if(cmpop=="<=") return "JG";
+    if(cmpop=="<") return "JGE";
+    if(cmpop=="==") return "JNE";
+    if(cmpop=="!=") return "JE";
+    return "?";
+}
+
+void jump_to_true(){
+    codeblock << INDENT << "JMP " << tf_labels.back().first->label << endl;
+    tf_labels.back().first->use_count++;
+}
+void jump_to_false(){
+    codeblock << INDENT << "JMP " << tf_labels.back().second->label << endl;
+    tf_labels.back().second->use_count++;
+}
+
+void compare_asmcode(string cmpop, string op1, string op2){
+    codeblock << INDENT << "CMP " << op1 << ", " << op2 << endl;
+    if(tf_jumpable.empty()){
+        codeblock << INDENT << asmop_for_cmp(cmpop, false) << " " << tf_labels.back().second->label << endl;
+        tf_labels.back().second->use_count++;
+    }
+    else if(tf_jumpable.top().first){
+        codeblock << INDENT << asmop_for_cmp(cmpop) << " " << tf_labels.back().first->label << endl;
+        tf_labels.back().first->use_count++;
+    }
+    else if(tf_jumpable.top().second){
+        codeblock << INDENT << asmop_for_cmp(cmpop, false) << " " << tf_labels.back().second->label << endl;
+        tf_labels.back().second->use_count++;
+    }
+}
+
+
+void set_jumpable(bool tjump, bool fjump){
+    tf_jumpable.push({tjump, fjump});
 }

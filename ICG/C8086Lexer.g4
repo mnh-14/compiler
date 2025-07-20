@@ -108,7 +108,8 @@ INCOP    : '++' { writeIntoLexLogFile("Line# " + std::to_string(getLine()) + ": 
 DECOP    : '--' { writeIntoLexLogFile("Line# " + std::to_string(getLine()) + ": Token <DECOP> Lexeme " + getText()); };
 NOT      : '!' { writeIntoLexLogFile("Line# " + std::to_string(getLine()) + ": Token <NOT> Lexeme " + getText()); };
 RELOP    : '<=' | '==' | '>=' | '>' | '<' | '!=' { writeIntoLexLogFile("Line# " + std::to_string(getLine()) + ": Token <RELOP> Lexeme " + getText()); };
-LOGICOP  : '&&' | '||' { writeIntoLexLogFile("Line# " + std::to_string(getLine()) + ": Token <LOGICOP> Lexeme " + getText()); };
+ANDOP    : '&&' { writeIntoLexLogFile("Line# " + std::to_string(getLine()) + ": Token <ANDOP> Lexeme " + getText()); };
+OROP     : '||' { writeIntoLexLogFile("Line# " + std::to_string(getLine()) + ": Token <OROP> Lexeme " + getText()); };
 ASSIGNOP : '=' { writeIntoLexLogFile("Line# " + std::to_string(getLine()) + ": Token <ASSIGNOP> Lexeme " + getText()); };
 
 // ------------------------------
