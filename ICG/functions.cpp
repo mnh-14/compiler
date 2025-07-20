@@ -34,7 +34,9 @@ void exit_scope(){
 
 void anything(){
     string mem;
-    mem = symbol_table.lookup("am")->get_memory();
+
+    mem = symbol_table.lookup("am")->get_memory()->get_location();
+    codeblock << "MOV AX, " << endl;
 }
 
 void entering_function(string fid, string rettype, int line_no){
@@ -54,3 +56,4 @@ void finishing_function(string fid){
     codeblock << "RET " << 2 << endl;
     codeblock << "ENDP " << fid << endl;
 }
+

@@ -16,7 +16,12 @@ MemLocation::MemLocation(std::string bp, int off): base_ptr(bp), offset(off){}
 
 MemLocation::MemLocation() {}
 
-std::string MemLocation::get_location() { return "["+base_ptr + std::to_string(offset) + "]"; }
+std::string MemLocation::get_location() {
+    std::string off;
+    if(offset >= 0) off = "+" + std::to_string(offset);
+    else off = std::to_string(offset);
+    return "["+base_ptr + off + "]";
+}
 
 
 std::string GlobalMemLocation::get_location() { return base_ptr; }

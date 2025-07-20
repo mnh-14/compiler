@@ -109,11 +109,11 @@ expression_statement : SEMICOLON
         ;
 
 variable returns [std::string mem]
-		: ID	{ $mem = symbol_table.lookup($ID->getText)->get_memory(); }
+		: ID	{ $mem = symbol_table.lookup($ID->getText())->get_memory()->get_location(); }
         | ID LTHIRD expression RTHIRD
         ;
 expression : logic_expression
-        | variable ASSIGNOP logic_expression
+        | v=variable ASSIGNOP logic_expression { codeblock << INDENT << "MOV " << $v.mem << ", AX" << std::endl; }
         ;
 logic_expression : rel_expression
         | rel_expression LOGICOP rel_expression
@@ -137,7 +137,7 @@ unary_expression : ADDOP unary_expression
 factor : variable
         | ID LPAREN argument_list RPAREN
         | LPAREN expression RPAREN
-        | CONST_INT
+        | CONST_INT		{ codeblock << INDENT << "MOV AX, " << $CONST_INT->getText() << std::endl; }
         | CONST_FLOAT
         | variable INCOP
         | variable DECOP

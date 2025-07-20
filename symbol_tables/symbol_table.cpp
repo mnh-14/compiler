@@ -16,7 +16,7 @@ SymbolTable::SymbolTable(int bucket_size): SymbolTable(bucket_size, sdbm_hash) {
 
 int SymbolTable::enter_new_scope(){
     this->scope_count++;
-    if(this->is_global_scope()) stack_offset = 0;
+    if(this->is_global_scope()) stack_offset = -2;
     ScopeTable * new_scope = new ScopeTable(this->bucket_size, this->scope_count);
     new_scope->set_hash_function(this->hash_function);
     new_scope->set_parent_scope(this->current_scope);
