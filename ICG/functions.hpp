@@ -54,7 +54,7 @@ void entering_function(std::string fid, std::string rettype, int line_no);
 void finishing_function(std::string fid);
 void addop_asmcode(std::string addop);
 std::string get_memloc(std::string id);
-void move(std::string a, std::string b, int line=-1);
+void move(std::string a, std::string b, bool preserve=false, int line=-1);
 void mulop_asmcode(std::string mulop);
 Label* new_label();
 std::string new_loop_label();
@@ -72,10 +72,16 @@ void place_single_label();
 void pop_single_label();
 void jump_to_current_single_label();
 void set_jumpable(bool tjump=true, bool fjump=true);
-void compare_asmcode(std::string cmpop, std::string op1="CX", std::string op2="AX");
+void compare_asmcode(std::string cmpop, bool pop_op1, std::string op1="CX", std::string op2="AX");
 void jump_to_true();
 void jump_to_false();
 void simple_to_conditionals(bool is_simple);
 void log(std::string msg);
+void finalize_func_params(std::string fid);
+void insert_params_to_function(std::string vid);
+void return_statement();
+void push_asmcode(std::string op);
+void pop_asmcode(std::string op);
+void negate_operation(std::string addop, std::string operand);
 
 #endif

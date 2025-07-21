@@ -30,6 +30,8 @@ int SymbolTable::get_space_for_local_variable(Type * t){
     return curr;
 }
 
+void SymbolTable::reset_stack_offset() { stack_offset = -2; }
+
 int SymbolTable::get_current_stack_offset() { return stack_offset; }
 
 int SymbolTable::exit_scope(){

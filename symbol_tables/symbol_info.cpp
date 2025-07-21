@@ -59,6 +59,7 @@ FunctionSymbolInfo::FunctionSymbolInfo(std::string symbol, std::string symbol_ty
 {
     this->return_type = rtype;
     this->set_arguments(arguments);
+    arg_clean_required = false;
 }
 
 
@@ -70,6 +71,7 @@ void FunctionSymbolInfo::set_arguments(std::string* arguments){
     }
     if(arg_count==0)
         return;
+    arg_clean_required = true;
     // std::cout << "DID I GET It RIGHT line 64" << std::endl;
     argument_types = new std::string[arg_count+1];
     for(int i=0; ; i++){
@@ -103,6 +105,7 @@ std::string FunctionSymbolInfo::get_string_repr(std::string lbrace, std::string 
     
     return lbrace + this->get_symbol() + "," + this->get_symbol_type() + "," + this->return_type + "<==(" + args + ")" + rbrace;
 }
+std::string FunctionSymbolInfo::get_return_type() { return this->return_type; }
 // End of Function Symbol Info class
 // 
 

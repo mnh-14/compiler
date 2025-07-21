@@ -60,13 +60,18 @@ func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON
         ;
 
 func_definition 
-        : ts=type_specifier ID {entering_function($ID->getText(),$ts.read,$ID->getLine());} LPAREN parameter_list RPAREN compound_statement {finishing_function($ID->getText());}
-        | ts=type_specifier ID { entering_function($ID->getText(), $ts.read, $ID->getLine()); } LPAREN RPAREN compound_statement {finishing_function($ID->getText());}
+        : ts=type_specifier ID                    { entering_function($ID->getText(),$ts.read,$ID->getLine()); } 
+                    LPAREN parameter_list RPAREN  { finalize_func_params($ID->getText()); }
+                    compound_statement            { finishing_function($ID->getText()); }
+        | ts=type_specifier ID                    { entering_function($ID->getText(), $ts.read, $ID->getLine()); } 
+                    LPAREN RPAREN 
+                    compound_statement            { finishing_function($ID->getText()); }
         ;
 
-parameter_list : parameter_list COMMA type_specifier { global_type=$ts.read; } ID {}
+parameter_list 
+        : parameter_list COMMA ts=type_specifier { global_type=$ts.read; } ID { insert_params_to_function($ID->getText()); }
         | parameter_list COMMA type_specifier
-        | ts=type_specifier { global_type=$ts.read; } ID {}
+        | ts=type_specifier { global_type=$ts.read; }                      ID { insert_params_to_function($ID->getText()); }
         | type_specifier
         ;
 
@@ -117,7 +122,8 @@ statement : var_declaration
                                             move("AX", get_memloc($ID->getText()));
                                             codeblock << INDENT << "CALL print_output" << std::endl;
                                         }
-        | RETURN expression SEMICOLON
+        | RETURN expression SEMICOLON       { return_statement(); }
+        | ID LPAREN argument_list RPAREN    { codeblock << INDENT << "CALL " << $ID->getText() << std::endl; }
         ;
 expression_statement returns [bool is_simple]
         : SEMICOLON
@@ -143,16 +149,17 @@ logic_expression returns [bool is_simple]
 
 rel_expression returns [bool is_simple]
         : simple_expression { $is_simple = true; }
-        | simple_expression { move("CX", "AX");  } RELOP simple_expression   { $is_simple = false; compare_asmcode($RELOP->getText()); }
+        | simple_expression { move("CX", "AX", true);  } RELOP simple_expression   { $is_simple = false; compare_asmcode($RELOP->getText(), true); }
         ;
 simple_expression 
         : term 
-        | simple_expression { move("CX", "AX"); } ADDOP term { addop_asmcode($ADDOP->getText()); }
+        | simple_expression { move("CX", "AX", true); } ADDOP term { addop_asmcode($ADDOP->getText()); pop_asmcode("CX"); }
         ;
 term : unary_expression
-        | term { move("BX", "AX"); } MULOP unary_expression  { mulop_asmcode($MULOP->getText()); }
+        | term { move("BX", "AX", true); } MULOP unary_expression  { mulop_asmcode($MULOP->getText()); pop_asmcode("BX"); }
         ;
-unary_expression : ADDOP unary_expression
+unary_expression 
+        : ADDOP unary_expression { negate_operation($ADDOP->getText(), "AX"); }
         | NOT unary_expression
         | factor
         ;
@@ -160,7 +167,7 @@ unary_expression : ADDOP unary_expression
 
 factor 
     : v=variable       { move("AX", $v.mem); }
-    | ID LPAREN argument_list RPAREN
+    | ID LPAREN argument_list RPAREN { codeblock << INDENT << "CALL " << $ID->getText() << std::endl; }
     | LPAREN expression RPAREN
     | CONST_INT		   { codeblock << INDENT << "MOV AX, " << $CONST_INT->getText() << std::endl;  }
     | CONST_FLOAT
@@ -169,8 +176,11 @@ factor
     ;
     
 
-argument_list : arguments
+argument_list 
+        : arguments
+        |
         ;
-arguments : arguments COMMA logic_expression
-        | logic_expression
+arguments 
+        : arguments COMMA logic_expression { push_asmcode("AX"); }
+        | logic_expression { push_asmcode("AX"); }
         ;

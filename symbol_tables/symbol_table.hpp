@@ -20,6 +20,7 @@ public:
     int exit_scope();
     int get_space_for_local_variable(Type * t);
     int get_current_stack_offset();
+    void reset_stack_offset();
     /// @brief insert a symbol inside the current scope
     /// @param s_info a pointer to the SymbolInfo object created using new operator
     /// @param pos an integer array of size 3, (scope_table_no, scope_table_row, scope_table_column) to point out the exact location of the symbol in SymbolTable

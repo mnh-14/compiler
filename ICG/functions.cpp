@@ -13,6 +13,10 @@ stack<string> loop_label;
 vector<pair<int, int>> tf_label_use_count;
 vector<Label *> label_stream;
 stack<pair<bool, bool>> tf_jumpable;
+vector<MemLocation *> function_arg_mems;
+int global_func_param_byte_size = 0;
+FunctionSymbolInfo* current_func;
+vector<pair<string, string>> function_parameters;
 
 
 void insert_variable_to_symbletable_and_gencode(string vid) {
@@ -30,6 +34,7 @@ void insert_variable_to_symbletable_and_gencode(string vid) {
         codeblock << INDENT << "SUB SP, " << t->size << endl; 
     }
 }
+
 
 void forced_enter_scope(){
     symbol_table.enter_new_scope();
@@ -49,15 +54,59 @@ void anything(){
     string mem;
 
     mem = symbol_table.lookup("am")->get_memory()->get_location();
-    codeblock << "MOV AX, " << endl;
+    codeblock << INDENT << "MOV AX, " << endl;
 }
 
+
+void insert_params_to_function(string vid) {
+    // string parts[] = {vid, "VAR"};
+    // auto si = symbol_table.insert_symbol(parts);
+    // Type * t = Type::construct_type(global_type);
+    // si->set_type(t);
+    // global_func_param_byte_size+=t->size;
+    // int off = symbol_table.get_space_for_local_variable(t);
+    // auto mem = new MemLocation("bp", off);
+    // function_arg_mems.push_back(mem);
+    // si->set_memeory(mem);
+    function_parameters.push_back({vid, global_type});
+}
+
+void finalize_func_params(string fid) {
+    // for (auto &m: function_arg_mems){
+    //     m->offset += (4+global_func_param_byte_size);
+    // }
+    // symbol_table.reset_stack_offset();
+    // function_arg_mems.clear();
+    // global_func_param_byte_size = 0;
+    string parts[2];
+    int off = 4;
+    int total_parambytes = 0;
+    string * params = new string[function_parameters.size()+1];
+    int i = 0;
+    for (auto p=function_parameters.rbegin(); p<function_parameters.rend(); ++p){
+        parts[0] = (*p).first; parts[1] = "VAR";
+        auto si = symbol_table.insert_symbol(parts);
+        auto t = Type::construct_type((*p).second);
+        si->set_memeory(new MemLocation("bp", off+total_parambytes));
+        total_parambytes += t->get_size();
+        si->set_type(t);
+        params[i] = (*p).second;
+        i++;
+    }
+    params[i] = "\n";
+    current_func->set_arguments(params);
+    current_func->set_arg_byte_size(total_parambytes);
+    function_parameters.clear();
+    symbol_table.reset_stack_offset();
+}
+
+
 void entering_function(string fid, string rettype, int line_no){
-    FunctionSymbolInfo* si;
-    si = dynamic_cast<FunctionSymbolInfo*>(symbol_table.lookup(fid));
-    if(!si){
+    // FunctionSymbolInfo* si;
+    current_func = dynamic_cast<FunctionSymbolInfo*>(symbol_table.lookup(fid));
+    if(!current_func){
         string parts[] = {fid, "FUNCTION", rettype, "\n"};
-        si = dynamic_cast<FunctionSymbolInfo*>(symbol_table.insert_symbol(parts));
+        current_func = dynamic_cast<FunctionSymbolInfo*>(symbol_table.insert_symbol(parts));
     }
     forced_enter_scope();
     codeblock << fid << " PROC" << INDENT << INDENT << "; " << line_no << " no. line" << endl;
@@ -65,10 +114,14 @@ void entering_function(string fid, string rettype, int line_no){
     codeblock << INDENT << "MOV BP, SP" << endl;
 }
 
-void finishing_function(string fid){
+void return_statement(){
     codeblock << INDENT << "MOV SP, BP" << endl;
     codeblock << INDENT << "POP BP" << endl;
-    codeblock << INDENT << "RET " << 0 << endl;
+    codeblock << INDENT << "RET " << current_func->get_arg_byte_size() << endl;
+}
+
+void finishing_function(string fid){
+    if(current_func->get_return_type()=="void") return_statement();
     codeblock << "ENDP " << fid << endl << endl;
 }
 
@@ -82,7 +135,7 @@ void finishing_function(string fid){
 void addop_asmcode(string addop){
     switch(addop[0]){
         case '+' : codeblock << INDENT << "ADD AX, CX" << endl; break;
-        case '-' : codeblock << INDENT << "SUB CX, AX" << endl << "MOV AX, CX" << endl; break;
+        case '-' : codeblock << INDENT << "SUB CX, AX" << endl << INDENT << "MOV AX, CX" << endl; break;
     }
 }
 
@@ -90,7 +143,8 @@ string get_memloc(string id){
     return symbol_table.lookup(id)->get_memory()->get_location();
 }
 
-void move(string a, string b, int line){
+void move(string a, string b, bool preserve, int line){
+    if(preserve) push_asmcode(a);
     codeblock << INDENT << "MOV " << a << ", " << b << endl;
 }
 
@@ -247,8 +301,9 @@ void jump_to_false(){
     tf_labels.back().second->use_count++;
 }
 
-void compare_asmcode(string cmpop, string op1, string op2){
+void compare_asmcode(string cmpop, bool pop_op1, string op1, string op2){
     codeblock << INDENT << "CMP " << op1 << ", " << op2 << endl;
+    if(pop_op1) pop_asmcode(op1);
     if(tf_jumpable.empty()){
         codeblock << INDENT << asmop_for_cmp(cmpop, false) << " " << tf_labels.back().second->label << endl;
         tf_labels.back().second->use_count++;
@@ -291,4 +346,17 @@ void set_jumpable(bool tjump, bool fjump){
 
 void log(string msg){
     cout << msg << endl;
+}
+
+void push_asmcode(string op){
+    codeblock << INDENT << "PUSH " << op << endl;
+}
+
+void pop_asmcode(string op) {
+    codeblock << INDENT << "POP " << op << endl;
+}
+
+void negate_operation(string addop, string operand){
+    if (addop == "+") return;
+    codeblock << INDENT << "NEG " << operand << endl;
 }

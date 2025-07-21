@@ -56,15 +56,18 @@ private:
     std::string return_type;
     std::string* argument_types = nullptr;
     int arg_byte_size = 0;
+    bool arg_clean_required = false;
 public:
     FunctionSymbolInfo(std::string symbol, std::string symbol_type, std::string rtype, std::string* arguments);
     FunctionSymbolInfo(std::string symbol, std::string symbol_type, std::string rtype);
     void set_arguments(std::string* args);
     void set_arg_byte_size(int sz);
     int get_arg_byte_size();
+    std::string get_return_type();
     FunctionSymbolInfo();
     ~FunctionSymbolInfo();
     std::string get_string_repr(std::string lbrace, std::string rbrace) override;
+    // void add_argument(std::string type, int size);
 };
 
 
