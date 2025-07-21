@@ -106,12 +106,12 @@ statement : var_declaration
                     expression RPAREN       { place_true_label(); }
                     statement               { jump_to(get_new_single_label()); } 
                     ELSE                    { place_false_label(); pop_used_tf_label(); } 
-                    statement               { place_single_label(); }
+                    statement               { place_single_label(); pop_single_label(); }
         | IF LPAREN                         { generate_new_tf_labels(); }
                     expression RPAREN       { place_true_label(); } 
                     statement               { place_false_label(); pop_used_tf_label(); }
         | WHILE LPAREN                      { generate_new_tf_labels(); place_loop_label(); } 
-                    expression RPAREN       { place_true_label(); } 
+                    e=expression RPAREN     { simple_to_conditionals($e.is_simple); place_true_label(); } 
                     statement               { place_jump_loop(); place_false_label(); pop_used_tf_label(); pop_loop_label(); }
         | PRINTLN LPAREN ID RPAREN SEMICOLON{ 
                                             move("AX", get_memloc($ID->getText()));
@@ -119,21 +119,25 @@ statement : var_declaration
                                         }
         | RETURN expression SEMICOLON
         ;
-expression_statement : SEMICOLON
-        | expression SEMICOLON
+expression_statement returns [bool is_simple]
+        : SEMICOLON
+        | e=expression SEMICOLON { $is_simple = $e.is_simple; }
         ;
 
 variable returns [std::string mem, std::string id]
         : ID	{ $mem = get_memloc($ID->getText()); $id=$ID->getText(); }
         | ID LTHIRD expression RTHIRD
         ;
-expression : logic_expression
-        | v=variable ASSIGNOP { generate_new_tf_labels(); } le=logic_expression { write_assign_asmcode($v.mem, $le.is_simple); pop_used_tf_label(); }
+expression returns [bool is_simple]
+        : le=logic_expression { $is_simple = $le.is_simple; }
+        | v=variable ASSIGNOP { generate_new_tf_labels(); } le=logic_expression { write_assign_asmcode($v.mem, $le.is_simple); pop_used_tf_label(); $is_simple=true;}
         ;
 logic_expression returns [bool is_simple]
         : re=rel_expression   { $is_simple=$re.is_simple; }
-        | { set_jumpable(false, true); } rel_expression ANDOP rel_expression    { $is_simple = false; tf_jumpable.pop(); }
-        | { set_jumpable(true, false); } rel_expression OROP rel_expression     { $is_simple = false; jump_to_false(); tf_jumpable.pop(); }
+        | { set_jumpable(false, true); } re=rel_expression              { simple_to_conditionals($re.is_simple); } 
+                                            ANDOP re2=rel_expression    { simple_to_conditionals($re2.is_simple); $is_simple = false; tf_jumpable.pop(); } // Need to handle this for simple expressions
+        | { set_jumpable(true, false); } re=rel_expression              { simple_to_conditionals($re.is_simple); }
+                                            OROP re2=rel_expression     { simple_to_conditionals($re2.is_simple); $is_simple = false; jump_to_false(); tf_jumpable.pop(); }
         ;
         
 
@@ -146,7 +150,7 @@ simple_expression
         | simple_expression { move("CX", "AX"); } ADDOP term { addop_asmcode($ADDOP->getText()); }
         ;
 term : unary_expression
-        | term { move("CX", "AX"); } MULOP unary_expression  { mulop_asmcode($MULOP->getText()); }
+        | term { move("BX", "AX"); } MULOP unary_expression  { mulop_asmcode($MULOP->getText()); }
         ;
 unary_expression : ADDOP unary_expression
         | NOT unary_expression
@@ -160,8 +164,8 @@ factor
     | LPAREN expression RPAREN
     | CONST_INT		   { codeblock << INDENT << "MOV AX, " << $CONST_INT->getText() << std::endl;  }
     | CONST_FLOAT
-    | v=variable INCOP { move("AX", $v.mem); codeblock << INDENT << "INC " << $v.mem << std::endl; }
-    | v=variable DECOP { move("AX", $v.mem); codeblock << INDENT << "DEC " << $v.mem << std::endl; }
+    | v=variable INCOP { move("AX", $v.mem); codeblock << INDENT << "INC WORD " << $v.mem << std::endl; }
+    | v=variable DECOP { move("AX", $v.mem); codeblock << INDENT << "DEC WORD " << $v.mem << std::endl; }
     ;
     
 

@@ -75,5 +75,7 @@ void set_jumpable(bool tjump=true, bool fjump=true);
 void compare_asmcode(std::string cmpop, std::string op1="CX", std::string op2="AX");
 void jump_to_true();
 void jump_to_false();
+void simple_to_conditionals(bool is_simple);
+void log(std::string msg);
 
 #endif

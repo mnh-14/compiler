@@ -98,17 +98,17 @@ void mulop_asmcode(string mulop){
     switch(mulop[0]){
         case '*' :
             codeblock << INDENT << "CBW" << endl;
-            codeblock << INDENT << "MUL CX" << endl;
+            codeblock << INDENT << "MUL BX" << endl;
             break;
         case '/' :
-            codeblock << INDENT << "XCHG CX, AX" << endl; 
+            codeblock << INDENT << "XCHG BX, AX" << endl; 
             codeblock << INDENT << "CWD" << endl;
-            codeblock << INDENT << "DIV CX" << endl;
+            codeblock << INDENT << "DIV BX" << endl;
             break;
         case '%' :
-            codeblock << INDENT << "XCHG CX, AX" << endl; 
+            codeblock << INDENT << "XCHG BX, AX" << endl; 
             codeblock << INDENT << "CWD" << endl;
-            codeblock << INDENT << "DIV CX" << endl;
+            codeblock << INDENT << "DIV BX" << endl;
             codeblock << INDENT << "MOV AX, DX" << endl; // Remainder in AX
             break;
         default:
@@ -263,7 +263,32 @@ void compare_asmcode(string cmpop, string op1, string op2){
     }
 }
 
+// void 
+void simple_to_conditionals(bool is_simple){
+    if(!is_simple) return;
+    cout << "Turning a simple expressiont o conditionals in LOGICOP" << endl;
+    codeblock << INDENT << "CMP AX, 0" << endl;
+    if(tf_jumpable.empty()){
+        codeblock << INDENT << "JE " << tf_labels.back().second->label << endl;
+        tf_labels.back().second->use_count++;
+        return;
+    }
+    if(tf_jumpable.top().first){
+        codeblock << INDENT << "JNE " << tf_labels.back().first->label << endl;
+        tf_labels.back().first->use_count++;
+    }
+    if(tf_jumpable.top().second){
+        codeblock << INDENT << "JE " << tf_labels.back().second->label << endl;
+        tf_labels.back().second->use_count++;
+    }
+}
+
 
 void set_jumpable(bool tjump, bool fjump){
     tf_jumpable.push({tjump, fjump});
+}
+
+
+void log(string msg){
+    cout << msg << endl;
 }
